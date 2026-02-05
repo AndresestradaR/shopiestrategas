@@ -3,7 +3,7 @@
 > Este archivo es actualizado por Claude Code después de cada tarea completada.
 > Ralph lee este archivo para saber qué ya está hecho y qué sigue.
 
-## Estado actual: FASE 5 EN PROGRESO
+## Estado actual: FASE 6 EN PROGRESO
 
 ### FASE 1: Setup & Infraestructura
 - [x] 1.1 — docker-compose.yml (PostgreSQL + Redis)
@@ -48,12 +48,12 @@
 - [x] 4.7 — Tests productos
 
 ### FASE 5: API Admin — Pedidos
-- [ ] 5.1 — Schemas pedidos
-- [ ] 5.2 — Listar + detalle
-- [ ] 5.3 — Cambiar estado
-- [ ] 5.4 — Servicio exportar Excel Dropi
-- [ ] 5.5 — Endpoint exportar Excel
-- [ ] 5.6 — Tests pedidos
+- [x] 5.1 — Schemas pedidos
+- [x] 5.2 — Listar + detalle
+- [x] 5.3 — Cambiar estado
+- [x] 5.4 — Servicio exportar Excel Dropi
+- [x] 5.5 — Endpoint exportar Excel
+- [x] 5.6 — Tests pedidos
 
 ### FASE 6: API Admin — Config, Páginas, Checkout
 - [ ] 6.1 — Config endpoints
@@ -131,3 +131,4 @@
 - [x] 2.1–2.15 — Todos los modelos de base de datos + __init__.py (2026-02-05)
 - [x] 3.1–3.6 — Auth completo: security, slugify, deps, endpoints, tests (6/6 pass) (2026-02-05)
 - [x] 4.1–4.7 — Products API: schemas, CRUD, images, variants, tests (6/6 pass) (2026-02-05)
+- [x] 5.1–5.6 — Orders API: schemas, CRUD, status, Excel export, tests (4/4 pass) (2026-02-05)
