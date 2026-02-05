@@ -8,7 +8,7 @@
 ### FASE 1: Setup & Infraestructura
 - [x] 1.1 — docker-compose.yml (PostgreSQL + Redis)
 - [x] 1.2 — requirements.txt
-- [ ] 1.3 — config.py (Settings)
+- [x] 1.3 — config.py (Settings)
 - [ ] 1.4 — database.py (async engine)
 - [ ] 1.5 — main.py (FastAPI app)
 - [ ] 1.6 — Alembic setup
@@ -124,3 +124,4 @@
 <!-- Ralph agrega aquí cada tarea completada con timestamp -->
 - [x] 1.1 — docker-compose.yml con PostgreSQL 16 y Redis 7 (2026-02-05)
 - [x] 1.2 — backend/requirements.txt con todas las dependencias (2026-02-05)
+- [x] 1.3 — config.py con Settings pydantic-settings (2026-02-05)
