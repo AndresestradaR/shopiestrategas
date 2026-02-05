@@ -3,7 +3,7 @@
 > Este archivo es actualizado por Claude Code después de cada tarea completada.
 > Ralph lee este archivo para saber qué ya está hecho y qué sigue.
 
-## Estado actual: FASE 9 EN PROGRESO
+## Estado actual: FASE 10 EN PROGRESO
 
 ### FASE 1: Setup & Infraestructura
 - [x] 1.1 — docker-compose.yml (PostgreSQL + Redis)
@@ -78,14 +78,14 @@
 - [x] 8.5 — Router + auth guard
 
 ### FASE 9: Frontend Admin — Páginas Core
-- [ ] 9.1 — Login + Register
-- [ ] 9.2 — Dashboard
-- [ ] 9.3 — Products list
-- [ ] 9.4 — Product edit (full form)
-- [ ] 9.5 — Orders list
-- [ ] 9.6 — Order detail
-- [ ] 9.7 — Abandoned carts
-- [ ] 9.8 — Customers
+- [x] 9.1 — Login + Register
+- [x] 9.2 — Dashboard
+- [x] 9.3 — Products list
+- [x] 9.4 — Product edit (full form)
+- [x] 9.5 — Orders list
+- [x] 9.6 — Order detail
+- [x] 9.7 — Abandoned carts
+- [x] 9.8 — Customers
 
 ### FASE 10: Frontend Admin — Configuración
 - [ ] 10.1 — Checkout config
@@ -135,3 +135,4 @@
 - [x] 6.1–6.5 — Config, pages, checkout offers, apps, analytics endpoints (2026-02-05)
 - [x] 7.1–7.6 — Public API: tenant middleware, catalog, checkout, cart capture, tests (4/4 pass) (2026-02-05)
 - [x] 8.1–8.5 — Frontend admin: Vite+React+Tailwind, deps, Axios client, BuilderLayout, Router (2026-02-05)
+- [x] 9.1–9.8 — Admin pages: Login, Register, Dashboard, Products, Orders, AbandonedCarts, Customers (2026-02-05)
