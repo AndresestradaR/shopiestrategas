@@ -3,10 +3,10 @@
 > Este archivo es actualizado por Claude Code después de cada tarea completada.
 > Ralph lee este archivo para saber qué ya está hecho y qué sigue.
 
-## Estado actual: NO INICIADO
+## Estado actual: FASE 1 EN PROGRESO
 
 ### FASE 1: Setup & Infraestructura
-- [ ] 1.1 — docker-compose.yml (PostgreSQL + Redis)
+- [x] 1.1 — docker-compose.yml (PostgreSQL + Redis)
 - [ ] 1.2 — requirements.txt
 - [ ] 1.3 — config.py (Settings)
 - [ ] 1.4 — database.py (async engine)
@@ -122,3 +122,4 @@
 
 ## Log de cambios
 <!-- Ralph agrega aquí cada tarea completada con timestamp -->
+- [x] 1.1 — docker-compose.yml con PostgreSQL 16 y Redis 7 (2026-02-05)
