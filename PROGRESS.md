@@ -3,7 +3,7 @@
 > Este archivo es actualizado por Claude Code después de cada tarea completada.
 > Ralph lee este archivo para saber qué ya está hecho y qué sigue.
 
-## Estado actual: FASE 4 EN PROGRESO
+## Estado actual: FASE 5 EN PROGRESO
 
 ### FASE 1: Setup & Infraestructura
 - [x] 1.1 — docker-compose.yml (PostgreSQL + Redis)
@@ -39,13 +39,13 @@
 - [x] 3.6 — test auth
 
 ### FASE 4: API Admin — Productos
-- [ ] 4.1 — Schemas producto
-- [ ] 4.2 — CRUD listar + crear
-- [ ] 4.3 — Detalle + actualizar + eliminar
-- [ ] 4.4 — Subir imagen
-- [ ] 4.5 — Eliminar imagen
-- [ ] 4.6 — CRUD variantes
-- [ ] 4.7 — Tests productos
+- [x] 4.1 — Schemas producto
+- [x] 4.2 — CRUD listar + crear
+- [x] 4.3 — Detalle + actualizar + eliminar
+- [x] 4.4 — Subir imagen
+- [x] 4.5 — Eliminar imagen
+- [x] 4.6 — CRUD variantes
+- [x] 4.7 — Tests productos
 
 ### FASE 5: API Admin — Pedidos
 - [ ] 5.1 — Schemas pedidos
@@ -130,3 +130,4 @@
 - [x] 1.6 — Alembic setup async con migrations/env.py (2026-02-05)
 - [x] 2.1–2.15 — Todos los modelos de base de datos + __init__.py (2026-02-05)
 - [x] 3.1–3.6 — Auth completo: security, slugify, deps, endpoints, tests (6/6 pass) (2026-02-05)
+- [x] 4.1–4.7 — Products API: schemas, CRUD, images, variants, tests (6/6 pass) (2026-02-05)
