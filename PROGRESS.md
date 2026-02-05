@@ -3,7 +3,7 @@
 > Este archivo es actualizado por Claude Code después de cada tarea completada.
 > Ralph lee este archivo para saber qué ya está hecho y qué sigue.
 
-## Estado actual: FASE 11 EN PROGRESO
+## Estado actual: FASE 12 EN PROGRESO
 
 ### FASE 1: Setup & Infraestructura
 - [x] 1.1 — docker-compose.yml (PostgreSQL + Redis)
@@ -97,18 +97,18 @@
 - [x] 10.7 — Analytics dashboard
 
 ### FASE 11: Frontend Tienda Pública
-- [ ] 11.1 — Vite + React + Tailwind
-- [ ] 11.2 — useStore hook
-- [ ] 11.3 — Router
-- [ ] 11.4 — Home page
-- [ ] 11.5 — ProductCard
-- [ ] 11.6 — Product detail
-- [ ] 11.7 — Checkout form
-- [ ] 11.8 — QuantityOffers
-- [ ] 11.9 — Confirm page
-- [ ] 11.10 — Pixel Provider
-- [ ] 11.11 — WhatsApp button
-- [ ] 11.12 — Dynamic styles
+- [x] 11.1 — Vite + React + Tailwind
+- [x] 11.2 — useStore hook
+- [x] 11.3 — Router
+- [x] 11.4 — Home page
+- [x] 11.5 — ProductCard
+- [x] 11.6 — Product detail
+- [x] 11.7 — Checkout form
+- [x] 11.8 — QuantityOffers
+- [x] 11.9 — Confirm page
+- [x] 11.10 — Pixel Provider
+- [x] 11.11 — WhatsApp button
+- [x] 11.12 — Dynamic styles
 
 ### FASE 12: Integración & Polish
 - [ ] 12.1 — Image upload service
@@ -137,3 +137,4 @@
 - [x] 8.1–8.5 — Frontend admin: Vite+React+Tailwind, deps, Axios client, BuilderLayout, Router (2026-02-05)
 - [x] 9.1–9.8 — Admin pages: Login, Register, Dashboard, Products, Orders, AbandonedCarts, Customers (2026-02-05)
 - [x] 10.1–10.7 — Config pages: Checkout, Policies, Apps, Settings, Domain, Pixels, Analytics (2026-02-05)
+- [x] 11.1–11.12 — Frontend store: Home, Product, Checkout, Confirm, PixelProvider, WhatsApp, Dynamic styles (2026-02-05)
