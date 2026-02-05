@@ -3,7 +3,7 @@
 > Este archivo es actualizado por Claude Code después de cada tarea completada.
 > Ralph lee este archivo para saber qué ya está hecho y qué sigue.
 
-## Estado actual: FASE 7 EN PROGRESO
+## Estado actual: FASE 8 EN PROGRESO
 
 ### FASE 1: Setup & Infraestructura
 - [x] 1.1 — docker-compose.yml (PostgreSQL + Redis)
@@ -63,12 +63,12 @@
 - [x] 6.5 — Analytics dashboard
 
 ### FASE 7: API Pública — Tienda & Checkout
-- [ ] 7.1 — Middleware tenant
-- [ ] 7.2 — Catálogo público
-- [ ] 7.3 — Checkout (crear pedido)
-- [ ] 7.4 — Captura carrito abandonado
-- [ ] 7.5 — Admin carritos
-- [ ] 7.6 — Tests checkout
+- [x] 7.1 — Middleware tenant
+- [x] 7.2 — Catálogo público
+- [x] 7.3 — Checkout (crear pedido)
+- [x] 7.4 — Captura carrito abandonado
+- [x] 7.5 — Admin carritos
+- [x] 7.6 — Tests checkout
 
 ### FASE 8: Frontend Admin — Setup & Layout
 - [ ] 8.1 — Vite + React + Tailwind
@@ -133,3 +133,4 @@
 - [x] 4.1–4.7 — Products API: schemas, CRUD, images, variants, tests (6/6 pass) (2026-02-05)
 - [x] 5.1–5.6 — Orders API: schemas, CRUD, status, Excel export, tests (4/4 pass) (2026-02-05)
 - [x] 6.1–6.5 — Config, pages, checkout offers, apps, analytics endpoints (2026-02-05)
+- [x] 7.1–7.6 — Public API: tenant middleware, catalog, checkout, cart capture, tests (4/4 pass) (2026-02-05)
