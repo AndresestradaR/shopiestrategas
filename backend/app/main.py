@@ -1,5 +1,8 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.api.admin.analytics import router as analytics_router
 from app.api.admin.apps import router as apps_router
@@ -16,13 +19,16 @@ from app.config import settings
 
 app = FastAPI(title="MiniShop API", version="0.1.0")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+cors_kwargs = {
+    "allow_origins": settings.CORS_ORIGINS,
+    "allow_credentials": True,
+    "allow_methods": ["*"],
+    "allow_headers": ["*"],
+}
+if settings.CORS_ALLOW_REGEX:
+    cors_kwargs["allow_origin_regex"] = settings.CORS_ALLOW_REGEX
+
+app.add_middleware(CORSMiddleware, **cors_kwargs)
 
 
 app.include_router(auth_router)
@@ -36,6 +42,10 @@ app.include_router(analytics_router)
 app.include_router(carts_router)
 app.include_router(store_catalog_router)
 app.include_router(store_checkout_router)
+
+# Mount uploads directory for serving static files
+if os.path.isdir(settings.UPLOAD_DIR):
+    app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
 
 @app.get("/api/health")

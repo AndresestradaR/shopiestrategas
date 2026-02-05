@@ -3,7 +3,7 @@
 > Este archivo es actualizado por Claude Code después de cada tarea completada.
 > Ralph lee este archivo para saber qué ya está hecho y qué sigue.
 
-## Estado actual: FASE 12 EN PROGRESO
+## Estado actual: COMPLETADO
 
 ### FASE 1: Setup & Infraestructura
 - [x] 1.1 — docker-compose.yml (PostgreSQL + Redis)
@@ -111,12 +111,12 @@
 - [x] 11.12 — Dynamic styles
 
 ### FASE 12: Integración & Polish
-- [ ] 12.1 — Image upload service
-- [ ] 12.2 — Excel export real
-- [ ] 12.3 — Docker compose completo
-- [ ] 12.4 — README.md
-- [ ] 12.5 — Tenant isolation tests
-- [ ] 12.6 — CORS config
+- [x] 12.1 — Image upload service
+- [x] 12.2 — Excel export real
+- [x] 12.3 — Docker compose completo
+- [x] 12.4 — README.md
+- [x] 12.5 — Tenant isolation tests
+- [x] 12.6 — CORS config
 
 ---
 
@@ -138,3 +138,4 @@
 - [x] 9.1–9.8 — Admin pages: Login, Register, Dashboard, Products, Orders, AbandonedCarts, Customers (2026-02-05)
 - [x] 10.1–10.7 — Config pages: Checkout, Policies, Apps, Settings, Domain, Pixels, Analytics (2026-02-05)
 - [x] 11.1–11.12 — Frontend store: Home, Product, Checkout, Confirm, PixelProvider, WhatsApp, Dynamic styles (2026-02-05)
+- [x] 12.1–12.6 — Integration: Image upload service, Excel export, Docker compose, README, tenant isolation tests (34/34 pass), CORS config (2026-02-05)

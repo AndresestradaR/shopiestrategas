@@ -1,16 +1,12 @@
-import os
-import shutil
-import uuid
-
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_db, require_active_tenant
-from app.config import settings
 from app.models.store_config import StoreConfig
 from app.models.tenant import Tenant
 from app.schemas.store import StoreConfigResponse, StoreConfigUpdate
+from app.services.image_upload import validate_and_save_image
 
 router = APIRouter(prefix="/api/admin/config", tags=["admin-config"])
 
@@ -57,17 +53,9 @@ async def upload_logo(
     if not config:
         raise HTTPException(status_code=404, detail="Store config not found")
 
-    upload_dir = os.path.join(settings.UPLOAD_DIR, str(tenant.id))
-    os.makedirs(upload_dir, exist_ok=True)
+    logo_url = await validate_and_save_image(file, tenant.id, subfolder="logos")
 
-    ext = os.path.splitext(file.filename or "logo.png")[1]
-    filename = f"logo-{uuid.uuid4()}{ext}"
-    filepath = os.path.join(upload_dir, filename)
-
-    with open(filepath, "wb") as f:
-        shutil.copyfileobj(file.file, f)
-
-    config.logo_url = f"/uploads/{tenant.id}/{filename}"
+    config.logo_url = logo_url
     await db.flush()
     await db.refresh(config)
     return config

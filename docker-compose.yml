@@ -19,6 +19,38 @@ services:
     volumes:
       - redis_data:/data
 
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://minishop:minishop_dev@postgres:5432/minishop
+      SECRET_KEY: change-me-in-production
+      CORS_ORIGINS: '["http://localhost:5173","http://localhost:5174","http://localhost:3000","http://localhost:3001"]'
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - uploads_data:/app/uploads
+
+  frontend-admin:
+    build: ./frontend-admin
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+  frontend-store:
+    build: ./frontend-store
+    restart: unless-stopped
+    ports:
+      - "3001:80"
+    depends_on:
+      - backend
+
 volumes:
   postgres_data:
   redis_data:
+  uploads_data:

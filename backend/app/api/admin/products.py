@@ -1,5 +1,4 @@
 import os
-import shutil
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
@@ -8,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.deps import get_db, require_active_tenant
-from app.config import settings
 from app.models.product import Product, ProductImage, ProductVariant
 from app.models.tenant import Tenant
 from app.schemas.product import (
@@ -20,6 +18,7 @@ from app.schemas.product import (
     ProductVariantCreate,
     ProductVariantResponse,
 )
+from app.services.image_upload import validate_and_save_image
 from app.utils.slugify import generate_unique_slug
 
 router = APIRouter(prefix="/api/admin/products", tags=["admin-products"])
@@ -148,17 +147,8 @@ async def upload_image(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    upload_dir = os.path.join(settings.UPLOAD_DIR, str(tenant.id), "products")
-    os.makedirs(upload_dir, exist_ok=True)
+    image_url = await validate_and_save_image(file, tenant.id, subfolder="products")
 
-    ext = os.path.splitext(file.filename or "image.jpg")[1]
-    filename = f"{uuid.uuid4()}{ext}"
-    filepath = os.path.join(upload_dir, filename)
-
-    with open(filepath, "wb") as f:
-        shutil.copyfileobj(file.file, f)
-
-    image_url = f"/uploads/{tenant.id}/products/{filename}"
     image = ProductImage(
         product_id=product.id,
         tenant_id=tenant.id,
