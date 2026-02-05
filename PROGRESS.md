@@ -3,7 +3,7 @@
 > Este archivo es actualizado por Claude Code después de cada tarea completada.
 > Ralph lee este archivo para saber qué ya está hecho y qué sigue.
 
-## Estado actual: FASE 2 EN PROGRESO
+## Estado actual: FASE 3 EN PROGRESO
 
 ### FASE 1: Setup & Infraestructura
 - [x] 1.1 — docker-compose.yml (PostgreSQL + Redis)
@@ -14,21 +14,21 @@
 - [x] 1.6 — Alembic setup
 
 ### FASE 2: Modelos de Base de Datos
-- [ ] 2.1 — Modelo Tenant
-- [ ] 2.2 — Modelo StoreConfig
-- [ ] 2.3 — Modelo Product
-- [ ] 2.4 — Modelo ProductImage
-- [ ] 2.5 — Modelo ProductVariant
-- [ ] 2.6 — Modelo Order
-- [ ] 2.7 — Modelo OrderItem
-- [ ] 2.8 — Modelo StorePage
-- [ ] 2.9 — Modelo AbandonedCart
-- [ ] 2.10 — Modelo CheckoutOffer
-- [ ] 2.11 — Modelo Customer
-- [ ] 2.12 — Modelo StoreApp
-- [ ] 2.13 — Modelo Testimonial
-- [ ] 2.14 — Modelo TenantDomain
-- [ ] 2.15 — __init__.py + migración inicial
+- [x] 2.1 — Modelo Tenant
+- [x] 2.2 — Modelo StoreConfig
+- [x] 2.3 — Modelo Product
+- [x] 2.4 — Modelo ProductImage
+- [x] 2.5 — Modelo ProductVariant
+- [x] 2.6 — Modelo Order
+- [x] 2.7 — Modelo OrderItem
+- [x] 2.8 — Modelo StorePage
+- [x] 2.9 — Modelo AbandonedCart
+- [x] 2.10 — Modelo CheckoutOffer
+- [x] 2.11 — Modelo Customer
+- [x] 2.12 — Modelo StoreApp
+- [x] 2.13 — Modelo Testimonial
+- [x] 2.14 — Modelo TenantDomain
+- [x] 2.15 — __init__.py + migración inicial
 
 ### FASE 3: Auth & Seguridad
 - [ ] 3.1 — security.py (JWT + bcrypt)
@@ -128,3 +128,4 @@
 - [x] 1.4 — database.py con async engine, sessionmaker, Base, get_db (2026-02-05)
 - [x] 1.5 — main.py con FastAPI app, CORS, health check (2026-02-05)
 - [x] 1.6 — Alembic setup async con migrations/env.py (2026-02-05)
+- [x] 2.1–2.15 — Todos los modelos de base de datos + __init__.py (2026-02-05)
