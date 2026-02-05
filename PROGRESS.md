@@ -3,7 +3,7 @@
 > Este archivo es actualizado por Claude Code después de cada tarea completada.
 > Ralph lee este archivo para saber qué ya está hecho y qué sigue.
 
-## Estado actual: FASE 3 EN PROGRESO
+## Estado actual: FASE 4 EN PROGRESO
 
 ### FASE 1: Setup & Infraestructura
 - [x] 1.1 — docker-compose.yml (PostgreSQL + Redis)
@@ -31,12 +31,12 @@
 - [x] 2.15 — __init__.py + migración inicial
 
 ### FASE 3: Auth & Seguridad
-- [ ] 3.1 — security.py (JWT + bcrypt)
-- [ ] 3.2 — slugify.py
-- [ ] 3.3 — deps.py (dependencies)
-- [ ] 3.4 — auth endpoints
-- [ ] 3.5 — test conftest.py
-- [ ] 3.6 — test auth
+- [x] 3.1 — security.py (JWT + bcrypt)
+- [x] 3.2 — slugify.py
+- [x] 3.3 — deps.py (dependencies)
+- [x] 3.4 — auth endpoints
+- [x] 3.5 — test conftest.py
+- [x] 3.6 — test auth
 
 ### FASE 4: API Admin — Productos
 - [ ] 4.1 — Schemas producto
@@ -129,3 +129,4 @@
 - [x] 1.5 — main.py con FastAPI app, CORS, health check (2026-02-05)
 - [x] 1.6 — Alembic setup async con migrations/env.py (2026-02-05)
 - [x] 2.1–2.15 — Todos los modelos de base de datos + __init__.py (2026-02-05)
+- [x] 3.1–3.6 — Auth completo: security, slugify, deps, endpoints, tests (6/6 pass) (2026-02-05)

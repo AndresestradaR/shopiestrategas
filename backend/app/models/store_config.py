@@ -1,7 +1,7 @@
 import uuid
 
-from sqlalchemy import Integer, String
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import JSON, ForeignKey, Integer, String
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -10,7 +10,7 @@ from app.database import Base
 class StoreConfig(Base):
     __tablename__ = "store_configs"
 
-    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), primary_key=True)
     logo_url: Mapped[str | None] = mapped_column(String(500))
     primary_color: Mapped[str] = mapped_column(String(7), default="#4DBEA4")
     secondary_color: Mapped[str] = mapped_column(String(7), default="#0D1717")
@@ -23,7 +23,7 @@ class StoreConfig(Base):
     tiktok_pixel_id: Mapped[str | None] = mapped_column(String(100))
     checkout_title: Mapped[str] = mapped_column(String(255), default="Finalizar pedido")
     checkout_success_message: Mapped[str] = mapped_column(String(500), default="Tu pedido ha sido recibido con éxito.")
-    checkout_fields: Mapped[dict | None] = mapped_column(JSONB)
+    checkout_fields: Mapped[dict | None] = mapped_column(JSON)
     whatsapp_number: Mapped[str | None] = mapped_column(String(20))
     voice_enabled: Mapped[bool] = mapped_column(default=False)
     currency_symbol: Mapped[str] = mapped_column(String(5), default="$")

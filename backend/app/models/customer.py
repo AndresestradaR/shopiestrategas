@@ -1,8 +1,8 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
-from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy import JSON, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -22,5 +22,5 @@ class Customer(Base):
     total_orders: Mapped[int] = mapped_column(Integer, default=0)
     total_spent: Mapped[float] = mapped_column(Numeric(12, 2), default=0)
     last_order_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    tags: Mapped[list[str] | None] = mapped_column(ARRAY(String))
+    tags: Mapped[list | None] = mapped_column(JSON)
     notes: Mapped[str | None] = mapped_column(Text)
