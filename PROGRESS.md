@@ -3,7 +3,7 @@
 > Este archivo es actualizado por Claude Code después de cada tarea completada.
 > Ralph lee este archivo para saber qué ya está hecho y qué sigue.
 
-## Estado actual: FASE 8 EN PROGRESO
+## Estado actual: FASE 9 EN PROGRESO
 
 ### FASE 1: Setup & Infraestructura
 - [x] 1.1 — docker-compose.yml (PostgreSQL + Redis)
@@ -71,11 +71,11 @@
 - [x] 7.6 — Tests checkout
 
 ### FASE 8: Frontend Admin — Setup & Layout
-- [ ] 8.1 — Vite + React + Tailwind
-- [ ] 8.2 — Dependencias npm
-- [ ] 8.3 — Axios client con JWT
-- [ ] 8.4 — BuilderLayout + Sidebar
-- [ ] 8.5 — Router + auth guard
+- [x] 8.1 — Vite + React + Tailwind
+- [x] 8.2 — Dependencias npm
+- [x] 8.3 — Axios client con JWT
+- [x] 8.4 — BuilderLayout + Sidebar
+- [x] 8.5 — Router + auth guard
 
 ### FASE 9: Frontend Admin — Páginas Core
 - [ ] 9.1 — Login + Register
@@ -134,3 +134,4 @@
 - [x] 5.1–5.6 — Orders API: schemas, CRUD, status, Excel export, tests (4/4 pass) (2026-02-05)
 - [x] 6.1–6.5 — Config, pages, checkout offers, apps, analytics endpoints (2026-02-05)
 - [x] 7.1–7.6 — Public API: tenant middleware, catalog, checkout, cart capture, tests (4/4 pass) (2026-02-05)
+- [x] 8.1–8.5 — Frontend admin: Vite+React+Tailwind, deps, Axios client, BuilderLayout, Router (2026-02-05)
