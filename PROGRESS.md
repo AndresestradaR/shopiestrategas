@@ -3,7 +3,7 @@
 > Este archivo es actualizado por Claude Code después de cada tarea completada.
 > Ralph lee este archivo para saber qué ya está hecho y qué sigue.
 
-## Estado actual: FASE 10 EN PROGRESO
+## Estado actual: FASE 11 EN PROGRESO
 
 ### FASE 1: Setup & Infraestructura
 - [x] 1.1 — docker-compose.yml (PostgreSQL + Redis)
@@ -88,13 +88,13 @@
 - [x] 9.8 — Customers
 
 ### FASE 10: Frontend Admin — Configuración
-- [ ] 10.1 — Checkout config
-- [ ] 10.2 — Policies editor
-- [ ] 10.3 — Apps marketplace
-- [ ] 10.4 — General settings
-- [ ] 10.5 — Domain config
-- [ ] 10.6 — Pixels config
-- [ ] 10.7 — Analytics dashboard
+- [x] 10.1 — Checkout config
+- [x] 10.2 — Policies editor
+- [x] 10.3 — Apps marketplace
+- [x] 10.4 — General settings
+- [x] 10.5 — Domain config
+- [x] 10.6 — Pixels config
+- [x] 10.7 — Analytics dashboard
 
 ### FASE 11: Frontend Tienda Pública
 - [ ] 11.1 — Vite + React + Tailwind
@@ -136,3 +136,4 @@
 - [x] 7.1–7.6 — Public API: tenant middleware, catalog, checkout, cart capture, tests (4/4 pass) (2026-02-05)
 - [x] 8.1–8.5 — Frontend admin: Vite+React+Tailwind, deps, Axios client, BuilderLayout, Router (2026-02-05)
 - [x] 9.1–9.8 — Admin pages: Login, Register, Dashboard, Products, Orders, AbandonedCarts, Customers (2026-02-05)
+- [x] 10.1–10.7 — Config pages: Checkout, Policies, Apps, Settings, Domain, Pixels, Analytics (2026-02-05)
