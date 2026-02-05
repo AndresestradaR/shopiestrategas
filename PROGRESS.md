@@ -10,7 +10,7 @@
 - [x] 1.2 — requirements.txt
 - [x] 1.3 — config.py (Settings)
 - [x] 1.4 — database.py (async engine)
-- [ ] 1.5 — main.py (FastAPI app)
+- [x] 1.5 — main.py (FastAPI app)
 - [ ] 1.6 — Alembic setup
 
 ### FASE 2: Modelos de Base de Datos
@@ -126,3 +126,4 @@
 - [x] 1.2 — backend/requirements.txt con todas las dependencias (2026-02-05)
 - [x] 1.3 — config.py con Settings pydantic-settings (2026-02-05)
 - [x] 1.4 — database.py con async engine, sessionmaker, Base, get_db (2026-02-05)
+- [x] 1.5 — main.py con FastAPI app, CORS, health check (2026-02-05)
