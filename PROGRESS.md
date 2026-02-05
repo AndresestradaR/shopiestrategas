@@ -3,7 +3,7 @@
 > Este archivo es actualizado por Claude Code después de cada tarea completada.
 > Ralph lee este archivo para saber qué ya está hecho y qué sigue.
 
-## Estado actual: FASE 6 EN PROGRESO
+## Estado actual: FASE 7 EN PROGRESO
 
 ### FASE 1: Setup & Infraestructura
 - [x] 1.1 — docker-compose.yml (PostgreSQL + Redis)
@@ -56,11 +56,11 @@
 - [x] 5.6 — Tests pedidos
 
 ### FASE 6: API Admin — Config, Páginas, Checkout
-- [ ] 6.1 — Config endpoints
-- [ ] 6.2 — Pages CRUD + defaults
-- [ ] 6.3 — Checkout offers CRUD
-- [ ] 6.4 — Apps endpoints
-- [ ] 6.5 — Analytics dashboard
+- [x] 6.1 — Config endpoints
+- [x] 6.2 — Pages CRUD + defaults
+- [x] 6.3 — Checkout offers CRUD
+- [x] 6.4 — Apps endpoints
+- [x] 6.5 — Analytics dashboard
 
 ### FASE 7: API Pública — Tienda & Checkout
 - [ ] 7.1 — Middleware tenant
@@ -132,3 +132,4 @@
 - [x] 3.1–3.6 — Auth completo: security, slugify, deps, endpoints, tests (6/6 pass) (2026-02-05)
 - [x] 4.1–4.7 — Products API: schemas, CRUD, images, variants, tests (6/6 pass) (2026-02-05)
 - [x] 5.1–5.6 — Orders API: schemas, CRUD, status, Excel export, tests (4/4 pass) (2026-02-05)
+- [x] 6.1–6.5 — Config, pages, checkout offers, apps, analytics endpoints (2026-02-05)
