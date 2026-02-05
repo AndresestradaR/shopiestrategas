@@ -3,7 +3,7 @@
 > Este archivo es actualizado por Claude Code después de cada tarea completada.
 > Ralph lee este archivo para saber qué ya está hecho y qué sigue.
 
-## Estado actual: FASE 1 EN PROGRESO
+## Estado actual: FASE 2 EN PROGRESO
 
 ### FASE 1: Setup & Infraestructura
 - [x] 1.1 — docker-compose.yml (PostgreSQL + Redis)
@@ -11,7 +11,7 @@
 - [x] 1.3 — config.py (Settings)
 - [x] 1.4 — database.py (async engine)
 - [x] 1.5 — main.py (FastAPI app)
-- [ ] 1.6 — Alembic setup
+- [x] 1.6 — Alembic setup
 
 ### FASE 2: Modelos de Base de Datos
 - [ ] 2.1 — Modelo Tenant
@@ -127,3 +127,4 @@
 - [x] 1.3 — config.py con Settings pydantic-settings (2026-02-05)
 - [x] 1.4 — database.py con async engine, sessionmaker, Base, get_db (2026-02-05)
 - [x] 1.5 — main.py con FastAPI app, CORS, health check (2026-02-05)
+- [x] 1.6 — Alembic setup async con migrations/env.py (2026-02-05)
