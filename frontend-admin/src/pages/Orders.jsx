@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Search,
   Download,
@@ -50,6 +50,7 @@ const STATUS_COLORS = {
 };
 
 export default function Orders() {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("");
   const [exporting, setExporting] = useState(false);
@@ -173,7 +174,7 @@ export default function Orders() {
                   <tr
                     key={order.id}
                     className="cursor-pointer transition-colors hover:bg-gray-50"
-                    onClick={() => (window.location.href = `/orders/${order.id}`)}
+                    onClick={() => navigate(`/orders/${order.id}`)}
                   >
                     <td className="px-4 py-3 font-medium text-gray-900">
                       #{order.order_number || order.id}

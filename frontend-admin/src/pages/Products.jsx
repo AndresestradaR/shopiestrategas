@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Plus,
   Search,
@@ -26,6 +26,7 @@ const STATUS_TABS = [
 ];
 
 export default function Products() {
+  const navigate = useNavigate();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -142,7 +143,7 @@ export default function Products() {
                   <tr
                     key={product.id}
                     className="hover:bg-gray-50 transition-colors cursor-pointer"
-                    onClick={() => (window.location.href = `/products/${product.id}`)}
+                    onClick={() => navigate(`/products/${product.id}`)}
                   >
                     <td className="px-4 py-3">
                       {image ? (
