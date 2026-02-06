@@ -195,7 +195,11 @@ function CreateLandingModal({ onClose, onCreated }) {
     queryKey: ["products-for-landing"],
     queryFn: async () => {
       const res = await client.get("/admin/products");
-      return Array.isArray(res.data) ? res.data : [];
+      // Backend returns paginated response: { items: [...], total, page, per_page }
+      const data = res.data;
+      if (Array.isArray(data)) return data;
+      if (data?.items && Array.isArray(data.items)) return data.items;
+      return [];
     },
   });
 
