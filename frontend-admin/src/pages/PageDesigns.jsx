@@ -191,15 +191,15 @@ function CreateLandingModal({ onClose, onCreated }) {
   const [title, setTitle] = useState("");
   const [creating, setCreating] = useState(false);
 
-  const { data: products, isLoading: loadingProducts } = useQuery({
+  const { data: products = [], isLoading: loadingProducts } = useQuery({
     queryKey: ["products-for-landing"],
     queryFn: async () => {
       const res = await client.get("/admin/products");
-      return res.data;
+      return Array.isArray(res.data) ? res.data : [];
     },
   });
 
-  const selectedProduct = products?.find((p) => p.id === productId);
+  const selectedProduct = (products || []).find((p) => p.id === productId);
 
   const handleCreate = async () => {
     setCreating(true);
@@ -284,14 +284,14 @@ function CreateLandingModal({ onClose, onCreated }) {
                 <Loader2 size={14} className="animate-spin" />
                 Cargando productos...
               </div>
-            ) : !products || products.length === 0 ? (
+            ) : !products?.length ? (
               <p className="text-sm text-red-500">No tienes productos. Crea uno primero.</p>
             ) : (
               <select
                 value={productId}
                 onChange={(e) => {
                   setProductId(e.target.value);
-                  const prod = products.find((p) => p.id === e.target.value);
+                  const prod = (products || []).find((p) => p.id === e.target.value);
                   if (prod && !title) {
                     setTitle(`Landing - ${prod.name}`);
                   }
@@ -299,7 +299,7 @@ function CreateLandingModal({ onClose, onCreated }) {
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#4DBEA4] focus:outline-none focus:ring-1 focus:ring-[#4DBEA4]"
               >
                 <option value="">Selecciona un producto...</option>
-                {products.map((p) => (
+                {(products || []).map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
                   </option>

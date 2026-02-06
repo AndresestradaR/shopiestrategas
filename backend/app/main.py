@@ -32,6 +32,28 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.execute(text("CREATE SCHEMA IF NOT EXISTS minishop"))
         await conn.run_sync(Base.metadata.create_all)
+
+        # Auto-migrate: add product_id to page_designs if missing
+        result = await conn.execute(text(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_schema = 'minishop' AND table_name = 'page_designs' AND column_name = 'product_id'"
+        ))
+        if not result.fetchone():
+            await conn.execute(text(
+                "ALTER TABLE minishop.page_designs "
+                "ADD COLUMN product_id UUID REFERENCES minishop.products(id) ON DELETE SET NULL"
+            ))
+            await conn.execute(text(
+                "ALTER TABLE minishop.page_designs "
+                "DROP CONSTRAINT IF EXISTS uq_pagedesign_tenant_type_slug"
+            ))
+            await conn.execute(text(
+                "DO $$ BEGIN "
+                "IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_pagedesign_tenant_slug') THEN "
+                "ALTER TABLE minishop.page_designs "
+                "ADD CONSTRAINT uq_pagedesign_tenant_slug UNIQUE (tenant_id, slug); "
+                "END IF; END $$"
+            ))
     yield
 
 
