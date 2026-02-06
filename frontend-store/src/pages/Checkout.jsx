@@ -5,6 +5,13 @@ import { formatPrice } from '../components/ProductCard';
 import QuantityOffers from '../components/QuantityOffers';
 import { usePixel } from '../components/PixelProvider';
 
+const getImageUrl = (imgUrl) => {
+  if (!imgUrl) return '';
+  if (imgUrl.startsWith('http')) return imgUrl;
+  const apiBase = import.meta.env.VITE_API_URL || '';
+  return `${apiBase}${imgUrl}`;
+};
+
 const DEFAULT_FIELDS = [
   { name: 'customer_name', label: 'Nombre completo', type: 'text', required: true },
   { name: 'customer_phone', label: 'Telefono / WhatsApp', type: 'tel', required: true },
@@ -201,9 +208,9 @@ export default function Checkout() {
 
   const productImage =
     product.images && product.images.length > 0
-      ? typeof product.images[0] === 'string'
+      ? getImageUrl(typeof product.images[0] === 'string'
         ? product.images[0]
-        : product.images[0].url || product.images[0].src
+        : product.images[0].image_url || product.images[0].url || product.images[0].src)
       : 'https://placehold.co/200x200/e2e8f0/94a3b8?text=Sin+imagen';
 
   const fields = checkoutFields.length > 0 ? checkoutFields : DEFAULT_FIELDS;
@@ -215,7 +222,7 @@ export default function Checkout() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link to="/" className="flex items-center gap-2">
             {config?.logo_url ? (
-              <img src={config.logo_url} alt={storeName} className="h-8 w-auto" />
+              <img src={getImageUrl(config.logo_url)} alt={storeName} className="h-8 w-auto" />
             ) : (
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-primary)] text-sm font-bold text-white">
                 {storeName.charAt(0)}

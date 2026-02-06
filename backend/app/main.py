@@ -56,8 +56,8 @@ app.include_router(store_catalog_router)
 app.include_router(store_checkout_router)
 
 # Mount uploads directory for serving static files
-if os.path.isdir(settings.UPLOAD_DIR):
-    app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
+os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
 
 
 @app.get("/api/health")

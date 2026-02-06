@@ -4,6 +4,13 @@ import { getSlug } from '../hooks/useStore';
 import useStore from '../hooks/useStore';
 import SafeHtml from '../components/SafeHtml';
 
+const getImageUrl = (imgUrl) => {
+  if (!imgUrl) return '';
+  if (imgUrl.startsWith('http')) return imgUrl;
+  const apiBase = import.meta.env.VITE_API_URL || '';
+  return `${apiBase}${imgUrl}`;
+};
+
 export default function Page() {
   const { pageSlug } = useParams();
   const slug = getSlug();
@@ -54,7 +61,7 @@ export default function Page() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link to="/" className="flex items-center gap-2">
             {config?.logo_url ? (
-              <img src={config.logo_url} alt={storeName} className="h-8 w-auto" />
+              <img src={getImageUrl(config.logo_url)} alt={storeName} className="h-8 w-auto" />
             ) : (
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-primary)] text-sm font-bold text-white">
                 {storeName.charAt(0)}

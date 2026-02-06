@@ -1,5 +1,12 @@
 import { Link } from 'react-router-dom';
 
+const getImageUrl = (imgUrl) => {
+  if (!imgUrl) return '';
+  if (imgUrl.startsWith('http')) return imgUrl;
+  const apiBase = import.meta.env.VITE_API_URL || '';
+  return `${apiBase}${imgUrl}`;
+};
+
 function formatPrice(price, currency = 'COP', country = 'CO') {
   if (price == null) return '';
   const localeMap = {
@@ -29,7 +36,8 @@ export default function ProductCard({ product, currency, country }) {
     product.images && product.images.length > 0
       ? product.images[0]
       : 'https://placehold.co/400x400/e2e8f0/94a3b8?text=Sin+imagen';
-  const imageUrl = typeof image === 'string' ? image : image.url || image.src;
+  const rawUrl = typeof image === 'string' ? image : image.image_url || image.url || image.src;
+  const imageUrl = getImageUrl(rawUrl);
 
   const discount = getDiscountPercent(product.price, product.compare_at_price);
 

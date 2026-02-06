@@ -19,6 +19,13 @@ const formatCurrency = (value) =>
     minimumFractionDigits: 0,
   }).format(value || 0);
 
+const getImageUrl = (imgUrl) => {
+  if (!imgUrl) return '';
+  if (imgUrl.startsWith('http')) return imgUrl;
+  const apiBase = import.meta.env.VITE_API_URL || '';
+  return `${apiBase}${imgUrl}`;
+};
+
 const STATUS_TABS = [
   { key: "all", label: "Todos" },
   { key: "active", label: "Activos" },
@@ -133,7 +140,7 @@ export default function Products() {
             <tbody className="divide-y divide-gray-100">
               {products.map((product) => {
                 const image =
-                  product.images?.[0]?.url ||
+                  product.images?.[0]?.image_url ||
                   product.image_url ||
                   product.thumbnail ||
                   null;
@@ -148,7 +155,7 @@ export default function Products() {
                     <td className="px-4 py-3">
                       {image ? (
                         <img
-                          src={image}
+                          src={getImageUrl(image)}
                           alt={product.name}
                           className="h-10 w-10 rounded-lg object-cover"
                         />

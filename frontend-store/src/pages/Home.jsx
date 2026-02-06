@@ -4,6 +4,13 @@ import useStore from '../hooks/useStore';
 import ProductCard from '../components/ProductCard';
 import { usePixel } from '../components/PixelProvider';
 
+const getImageUrl = (imgUrl) => {
+  if (!imgUrl) return '';
+  if (imgUrl.startsWith('http')) return imgUrl;
+  const apiBase = import.meta.env.VITE_API_URL || '';
+  return `${apiBase}${imgUrl}`;
+};
+
 function TrustBadges() {
   const badges = [
     {
@@ -83,8 +90,8 @@ export default function Home() {
   }
 
   const storeName = config?.store_name || 'Tienda';
-  const logo = config?.logo_url;
-  const heroImage = config?.hero_image_url || config?.banner_url;
+  const logo = getImageUrl(config?.logo_url);
+  const heroImage = getImageUrl(config?.hero_image_url || config?.banner_url);
   const heroTitle = config?.hero_title || config?.store_name || 'Bienvenido';
   const heroSubtitle = config?.hero_subtitle || 'Descubre nuestros productos exclusivos';
   const currency = config?.currency || 'COP';

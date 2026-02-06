@@ -5,6 +5,13 @@ import { formatPrice } from '../components/ProductCard';
 import { usePixel } from '../components/PixelProvider';
 import SafeHtml from '../components/SafeHtml';
 
+const getImageUrl = (imgUrl) => {
+  if (!imgUrl) return '';
+  if (imgUrl.startsWith('http')) return imgUrl;
+  const apiBase = import.meta.env.VITE_API_URL || '';
+  return `${apiBase}${imgUrl}`;
+};
+
 export default function Product() {
   const { slug: productSlug } = useParams();
   const { config, products, isLoading, error } = useStore();
@@ -62,7 +69,7 @@ export default function Product() {
 
   const images =
     product.images && product.images.length > 0
-      ? product.images.map((img) => (typeof img === 'string' ? img : img.url || img.src))
+      ? product.images.map((img) => getImageUrl(typeof img === 'string' ? img : img.image_url || img.url || img.src))
       : ['https://placehold.co/600x600/e2e8f0/94a3b8?text=Sin+imagen'];
 
   const currentPrice = selectedVariant?.price || product.price;
@@ -79,7 +86,7 @@ export default function Product() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link to="/" className="flex items-center gap-2">
             {config?.logo_url ? (
-              <img src={config.logo_url} alt={storeName} className="h-8 w-auto" />
+              <img src={getImageUrl(config.logo_url)} alt={storeName} className="h-8 w-auto" />
             ) : (
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-primary)] text-sm font-bold text-white">
                 {storeName.charAt(0)}

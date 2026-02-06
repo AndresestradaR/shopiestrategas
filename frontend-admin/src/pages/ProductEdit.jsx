@@ -35,6 +35,13 @@ const formatCurrency = (value) =>
     minimumFractionDigits: 0,
   }).format(value || 0);
 
+const getImageUrl = (imgUrl) => {
+  if (!imgUrl) return '';
+  if (imgUrl.startsWith('http')) return imgUrl;
+  const apiBase = import.meta.env.VITE_API_URL || '';
+  return `${apiBase}${imgUrl}`;
+};
+
 // Rich Text Editor - uses contentEditable + execCommand for lightweight formatting.
 // Content is HTML from the authenticated store owner editing their own product descriptions.
 function RichTextEditor({ value, onChange }) {
@@ -304,7 +311,7 @@ export default function ProductEdit() {
                 <div className="mb-4 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5">
                   {images.map((img, index) => (
                     <div key={img.id} className="group relative aspect-square overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
-                      <img src={img.image_url} alt="Producto" className="h-full w-full object-cover" />
+                      <img src={getImageUrl(img.image_url)} alt="Producto" className="h-full w-full object-cover" />
                       {index === 0 && <span className="absolute left-1.5 top-1.5 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">Principal</span>}
                       <button type="button" onClick={() => handleDeleteImage(img.id)} className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white opacity-0 shadow group-hover:opacity-100"><X size={12} /></button>
                     </div>
