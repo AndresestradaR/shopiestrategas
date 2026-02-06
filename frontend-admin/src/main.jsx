@@ -17,7 +17,7 @@ const queryClient = new QueryClient({
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename="/constructor">
       <QueryClientProvider client={queryClient}>
         <App />
         <Toaster position="top-right" />
