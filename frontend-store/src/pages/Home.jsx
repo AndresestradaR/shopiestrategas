@@ -62,6 +62,22 @@ function TrustBadges() {
   );
 }
 
+const LANDING_BASE_CSS = `
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 0; }
+  img { max-width: 100% !important; height: auto !important; }
+
+  /* Animaciones de botones CTA */
+  @keyframes cta-shake{0%,100%{transform:translateX(0)}15%{transform:translateX(-6px)}30%{transform:translateX(6px)}45%{transform:translateX(-4px)}60%{transform:translateX(3px)}}
+  @keyframes cta-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+  @keyframes cta-shine{0%{background-position:200% center}100%{background-position:-200% center}}
+  @keyframes cta-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  .anim-shake{animation:cta-shake 2.5s ease-in-out infinite}
+  .anim-pulse{animation:cta-pulse 2s ease-in-out infinite}
+  .anim-shine{background-size:200% auto;animation:cta-shine 3s linear infinite}
+  .anim-bounce{animation:cta-bounce 2s ease-in-out infinite}
+`;
+
 // CustomLanding renders owner-authored HTML+CSS from the GrapesJS visual editor.
 // Content is created by the authenticated store owner, not end-user input.
 function CustomLanding({ page }) {
@@ -87,7 +103,7 @@ function CustomLanding({ page }) {
 
   return (
     <div onClick={handleClick}>
-      <style dangerouslySetInnerHTML={{ __html: page.css_content || '' }} />
+      <style dangerouslySetInnerHTML={{ __html: LANDING_BASE_CSS + '\n' + (page.css_content || '') }} />
       <div dangerouslySetInnerHTML={{ __html: page.html_content || '' }} />
     </div>
   );
