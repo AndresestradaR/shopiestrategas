@@ -6,12 +6,13 @@ import {
   Paintbrush,
   Loader2,
   AlertCircle,
-  Trash2,
   Eye,
   EyeOff,
   X,
   ShoppingBag,
   Home,
+  ExternalLink,
+  Copy,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import client from "../api/client";
@@ -26,6 +27,15 @@ export default function PageDesigns() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState(false);
+
+  const { data: tenant } = useQuery({
+    queryKey: ["auth-me"],
+    queryFn: async () => {
+      const res = await client.get("/auth/me");
+      return res.data;
+    },
+  });
+  const tenantSlug = tenant?.slug;
 
   const { data: designs, isLoading, isError, error } = useQuery({
     queryKey: ["pageDesigns"],
@@ -118,8 +128,9 @@ export default function PageDesigns() {
                   className="cursor-pointer transition-colors hover:bg-gray-50"
                   onClick={() => navigate(`/designer/${d.id}`)}
                 >
-                  <td className="px-4 py-3 font-medium text-gray-900">
-                    {d.title}
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-gray-900">{d.title}</div>
+                    <div className="text-xs text-gray-400">/{d.slug}</div>
                   </td>
                   <td className="px-4 py-3 text-gray-600">
                     {PAGE_TYPE_LABELS[d.page_type] || d.page_type}
@@ -145,6 +156,32 @@ export default function PageDesigns() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
+                      {d.is_published && tenantSlug && (
+                        <>
+                          <a
+                            href={`/tienda/${tenantSlug}/${d.page_type === "home" ? "" : `landing/${d.slug}`}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className="inline-flex items-center gap-1 text-xs text-blue-500 hover:underline"
+                          >
+                            <ExternalLink size={12} />
+                            Ver
+                          </a>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const url = `${window.location.origin}/tienda/${tenantSlug}/${d.page_type === "home" ? "" : `landing/${d.slug}`}`;
+                              navigator.clipboard.writeText(url);
+                              toast.success("URL copiada");
+                            }}
+                            className="text-xs text-gray-400 hover:text-gray-600"
+                            title="Copiar URL"
+                          >
+                            <Copy size={12} />
+                          </button>
+                        </>
+                      )}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();

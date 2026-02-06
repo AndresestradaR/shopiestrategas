@@ -1,5 +1,6 @@
 import uuid
 import re
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
@@ -48,6 +49,7 @@ class PageDesignResponse(BaseModel):
     html_content: str | None = None
     css_content: str | None = None
     is_published: bool
+    created_at: datetime | None = None
     model_config = {"from_attributes": True}
 
 
@@ -63,6 +65,7 @@ def _to_response(design: PageDesign) -> dict:
         "html_content": design.html_content,
         "css_content": design.css_content,
         "is_published": design.is_published,
+        "created_at": design.created_at,
     }
 
 
