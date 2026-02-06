@@ -12,15 +12,6 @@ const getImageUrl = (imgUrl) => {
   return `${apiBase}${imgUrl}`;
 };
 
-const DEFAULT_FIELDS = [
-  { name: 'customer_name', label: 'Nombre completo', type: 'text', required: true },
-  { name: 'customer_phone', label: 'Telefono / WhatsApp', type: 'tel', required: true },
-  { name: 'address', label: 'Direccion de entrega', type: 'text', required: true },
-  { name: 'city', label: 'Ciudad', type: 'text', required: true },
-  { name: 'state', label: 'Departamento / Estado', type: 'text', required: false },
-  { name: 'email', label: 'Correo electronico', type: 'email', required: false },
-];
-
 export default function Checkout() {
   const { productSlug } = useParams();
   const navigate = useNavigate();
@@ -28,9 +19,11 @@ export default function Checkout() {
   const { trackEvent } = usePixel();
 
   const [form, setForm] = useState({
-    customer_name: '',
+    customer_first_name: '',
+    customer_last_name: '',
     customer_phone: '',
     address: '',
+    address_extra: '',
     city: '',
     state: '',
     email: '',
@@ -45,7 +38,6 @@ export default function Checkout() {
   const currency = config?.currency || 'COP';
   const country = config?.country || 'CO';
   const storeName = config?.store_name || 'Tienda';
-  const checkoutFields = config?.checkout_fields || DEFAULT_FIELDS;
   const offers = config?.checkout_offers || product?.checkout_offers || [];
 
   useEffect(() => {
@@ -103,6 +95,7 @@ export default function Checkout() {
           body: JSON.stringify({
             product_id: product.id,
             product_slug: product.slug,
+            customer_name: `${form.customer_first_name} ${form.customer_last_name}`.trim(),
             [name]: value.trim(),
             ...form,
           }),
@@ -116,12 +109,12 @@ export default function Checkout() {
 
   const validate = () => {
     const errors = {};
-    const fields = checkoutFields.length > 0 ? checkoutFields : DEFAULT_FIELDS;
-    fields.forEach((field) => {
-      if (field.required && !form[field.name]?.trim()) {
-        errors[field.name] = 'Este campo es obligatorio';
-      }
-    });
+    if (!form.customer_first_name?.trim()) errors.customer_first_name = 'Este campo es obligatorio';
+    if (!form.customer_last_name?.trim()) errors.customer_last_name = 'Este campo es obligatorio';
+    if (!form.customer_phone?.trim()) errors.customer_phone = 'Este campo es obligatorio';
+    if (!form.address?.trim()) errors.address = 'Este campo es obligatorio';
+    if (!form.city?.trim()) errors.city = 'Este campo es obligatorio';
+    if (!form.state?.trim()) errors.state = 'Este campo es obligatorio';
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       errors.email = 'Correo electronico invalido';
     }
@@ -143,6 +136,7 @@ export default function Checkout() {
     try {
       const orderData = {
         ...form,
+        customer_name: `${form.customer_first_name} ${form.customer_last_name}`.trim(),
         product_id: product.id,
         product_slug: product.slug,
         variant_id: selectedVariant?.id || null,
@@ -213,13 +207,72 @@ export default function Checkout() {
         : product.images[0].image_url || product.images[0].url || product.images[0].src)
       : 'https://placehold.co/200x200/e2e8f0/94a3b8?text=Sin+imagen';
 
-  const fields = checkoutFields.length > 0 ? checkoutFields : DEFAULT_FIELDS;
+  /* ---- Inline SVG icon components ---- */
+  const UserIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+    </svg>
+  );
+  const PhoneIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
+    </svg>
+  );
+  const MapPinIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z" />
+    </svg>
+  );
+  const MailIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
+    </svg>
+  );
+  const NoteIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+    </svg>
+  );
+
+  /* Helper: render a form field row with icon */
+  const renderField = ({ name, label, icon, required, type = 'text', placeholder = '' }) => (
+    <div key={name}>
+      <label htmlFor={name} className="mb-1.5 block text-sm font-bold text-gray-700">
+        {label}
+        {required && <span className="ml-0.5 text-red-500">*</span>}
+      </label>
+      <div className="relative flex items-center">
+        <span className="pointer-events-none absolute left-0 flex h-10 w-10 items-center justify-center rounded-l-lg bg-gray-100">
+          {icon}
+        </span>
+        <input
+          id={name}
+          name={name}
+          type={type}
+          value={form[name] || ''}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          required={required}
+          placeholder={placeholder}
+          className={`w-full rounded-lg border py-3 pl-12 pr-4 text-sm outline-none transition-colors focus:border-amber-500 focus:ring-1 focus:ring-amber-500 ${
+            formErrors[name]
+              ? 'border-red-300 bg-red-50'
+              : 'border-gray-200 bg-white'
+          }`}
+        />
+      </div>
+      {formErrors[name] && (
+        <p className="mt-1 text-xs text-red-500">{formErrors[name]}</p>
+      )}
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+    <div className="min-h-screen bg-gray-50 pb-36">
+      {/* ── Header ── */}
       <header className="border-b border-gray-100 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
           <Link to="/" className="flex items-center gap-2">
             {config?.logo_url ? (
               <img src={getImageUrl(config.logo_url)} alt={storeName} className="h-8 w-auto" />
@@ -230,7 +283,7 @@ export default function Checkout() {
             )}
             <span className="font-bold text-gray-800">{storeName}</span>
           </Link>
-          <div className="flex items-center gap-1 text-sm text-gray-500">
+          <div className="flex items-center gap-1.5 text-xs text-gray-500">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
             </svg>
@@ -239,206 +292,238 @@ export default function Checkout() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-8">
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
-            {/* Left: Form */}
-            <div className="lg:col-span-3">
-              <div className="rounded-xl bg-white p-6 shadow-sm">
-                <h2 className="mb-6 text-xl font-bold text-gray-800">
-                  Datos de envio
-                </h2>
+      {/* ── Main single-column content ── */}
+      <main className="mx-auto max-w-lg px-4 py-5">
+        <form onSubmit={handleSubmit} className="space-y-5">
 
-                {formErrors._general && (
-                  <div className="mb-4 rounded-lg bg-red-50 p-4 text-sm text-red-600">
-                    {formErrors._general}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {fields.map((field) => (
-                    <div
-                      key={field.name}
-                      className={
-                        field.name === 'address' || field.name === 'email'
-                          ? 'sm:col-span-2'
-                          : ''
-                      }
-                    >
-                      <label
-                        htmlFor={field.name}
-                        className="mb-1 block text-sm font-medium text-gray-700"
-                      >
-                        {field.label}
-                        {field.required && (
-                          <span className="ml-1 text-red-400">*</span>
-                        )}
-                      </label>
-                      <input
-                        id={field.name}
-                        name={field.name}
-                        type={field.type || 'text'}
-                        value={form[field.name] || ''}
-                        onChange={handleChange}
-                        onBlur={handleBlur}
-                        required={field.required}
-                        placeholder={field.placeholder || ''}
-                        className={`w-full rounded-lg border px-4 py-3 text-sm outline-none transition-colors focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] ${
-                          formErrors[field.name]
-                            ? 'border-red-300 bg-red-50'
-                            : 'border-gray-200 bg-white'
-                        }`}
-                      />
-                      {formErrors[field.name] && (
-                        <p className="mt-1 text-xs text-red-500">
-                          {formErrors[field.name]}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-
-                  {/* Notes */}
-                  <div className="sm:col-span-2">
-                    <label
-                      htmlFor="notes"
-                      className="mb-1 block text-sm font-medium text-gray-700"
-                    >
-                      Notas adicionales (opcional)
-                    </label>
-                    <textarea
-                      id="notes"
-                      name="notes"
-                      rows={2}
-                      value={form.notes}
-                      onChange={handleChange}
-                      placeholder="Indicaciones especiales para la entrega..."
-                      className="w-full resize-none rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition-colors focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Variant selector in checkout */}
-              {product.variants && product.variants.length > 0 && (
-                <div className="mt-6 rounded-xl bg-white p-6 shadow-sm">
-                  <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-600">
-                    {product.variant_label || 'Selecciona tu variante'}
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {product.variants.map((variant) => (
-                      <button
-                        key={variant.id || variant.name}
-                        type="button"
-                        onClick={() => setSelectedVariant(variant)}
-                        className={`rounded-lg border-2 px-4 py-2 text-sm font-medium transition-all ${
-                          selectedVariant?.id === variant.id ||
-                          selectedVariant?.name === variant.name
-                            ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
-                            : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                        }`}
-                      >
-                        {variant.name || variant.title}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+          {/* ── Product card ── */}
+          <div className="flex gap-4 rounded-xl bg-white p-4 shadow-sm">
+            <img
+              src={productImage}
+              alt={product.name}
+              className="h-20 w-20 flex-shrink-0 rounded-lg object-cover"
+            />
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-semibold text-gray-800 line-clamp-2">
+                {product.name}
+              </h2>
+              {selectedVariant && (
+                <p className="mt-0.5 text-xs text-gray-500">
+                  {selectedVariant.name || selectedVariant.title}
+                </p>
               )}
+              <p className="mt-1 text-base font-bold text-[var(--color-primary)]">
+                {formatPrice(unitPrice, currency, country)}
+              </p>
             </div>
+          </div>
 
-            {/* Right: Summary */}
-            <div className="lg:col-span-2">
-              <div className="sticky top-20 space-y-6">
-                {/* Product Summary */}
-                <div className="rounded-xl bg-white p-6 shadow-sm">
-                  <h2 className="mb-4 text-lg font-bold text-gray-800">
-                    Resumen del pedido
-                  </h2>
+          {/* ── Quantity offers ── */}
+          {offers.length > 0 && (
+            <div className="rounded-xl bg-white p-4 shadow-sm">
+              <QuantityOffers
+                offers={offers}
+                selectedQty={selectedOffer?.quantity || 1}
+                onSelect={setSelectedOffer}
+                currency={currency}
+                country={country}
+                basePrice={unitPrice}
+              />
+            </div>
+          )}
 
-                  <div className="mb-4 flex gap-4">
-                    <img
-                      src={productImage}
-                      alt={product.name}
-                      className="h-20 w-20 flex-shrink-0 rounded-lg object-cover"
-                    />
-                    <div className="min-w-0">
-                      <h3 className="mb-1 text-sm font-semibold text-gray-800 line-clamp-2">
-                        {product.name}
-                      </h3>
-                      {selectedVariant && (
-                        <p className="text-xs text-gray-500">
-                          {selectedVariant.name || selectedVariant.title}
-                        </p>
-                      )}
-                      <p className="mt-1 text-sm font-bold text-[var(--color-primary)]">
-                        {formatPrice(unitPrice, currency, country)}
-                      </p>
-                    </div>
-                  </div>
+          {/* ── Variant selector chips ── */}
+          {product.variants && product.variants.length > 0 && (
+            <div className="rounded-xl bg-white p-4 shadow-sm">
+              <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-600">
+                {product.variant_label || 'Selecciona tu variante'}
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {product.variants.map((variant) => (
+                  <button
+                    key={variant.id || variant.name}
+                    type="button"
+                    onClick={() => setSelectedVariant(variant)}
+                    className={`rounded-lg border-2 px-4 py-2 text-sm font-medium transition-all ${
+                      selectedVariant?.id === variant.id ||
+                      selectedVariant?.name === variant.name
+                        ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)]'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                    }`}
+                  >
+                    {variant.name || variant.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
-                  {/* Quantity offers */}
-                  {offers.length > 0 && (
-                    <QuantityOffers
-                      offers={offers}
-                      selectedQty={selectedOffer?.quantity || 1}
-                      onSelect={setSelectedOffer}
-                      currency={currency}
-                      country={country}
-                      basePrice={unitPrice}
-                    />
-                  )}
+          {/* ── Price summary ── */}
+          <div className="rounded-xl bg-white p-4 shadow-sm">
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Subtotal {quantity > 1 && `(${quantity} uds)`}</span>
+                <span>{formatPrice(totalPrice, currency, country)}</span>
+              </div>
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>Envio</span>
+                <span className="font-semibold text-green-600">Gratis</span>
+              </div>
+              <div className="flex justify-between border-t border-gray-100 pt-2 text-lg font-bold text-gray-800">
+                <span>Total</span>
+                <span className="text-[var(--color-primary)]">
+                  {formatPrice(totalPrice, currency, country)}
+                </span>
+              </div>
+            </div>
+          </div>
 
-                  {/* Totals */}
-                  <div className="mt-4 space-y-2 border-t border-gray-100 pt-4">
-                    {quantity > 1 && (
-                      <div className="flex justify-between text-sm text-gray-600">
-                        <span>Cantidad</span>
-                        <span>{quantity} unidades</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between text-sm text-gray-600">
-                      <span>Envio</span>
-                      <span className="font-medium text-green-600">Gratis</span>
-                    </div>
-                    <div className="flex justify-between border-t border-gray-100 pt-2 text-lg font-bold text-gray-800">
-                      <span>Total</span>
-                      <span className="text-[var(--color-primary)]">
-                        {formatPrice(totalPrice, currency, country)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
+          {/* ── Form: Datos de envio ── */}
+          <div className="rounded-xl bg-white p-4 shadow-sm">
+            <h2 className="mb-4 text-lg font-bold text-gray-800">Datos de envio</h2>
 
-                {/* Submit button */}
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="w-full rounded-xl bg-[var(--color-primary)] py-4 text-lg font-bold text-white shadow-lg transition-all hover:brightness-90 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {submitting ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      Procesando...
-                    </span>
-                  ) : (
-                    'Confirmar pedido'
-                  )}
-                </button>
+            {formErrors._general && (
+              <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
+                {formErrors._general}
+              </div>
+            )}
 
-                {/* Trust */}
-                <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
-                  </svg>
-                  Pago seguro contraentrega
+            <div className="space-y-4">
+              {/* customer_first_name */}
+              {renderField({
+                name: 'customer_first_name',
+                label: 'Nombre',
+                icon: <UserIcon />,
+                required: true,
+                placeholder: 'Nombre',
+              })}
+
+              {/* customer_last_name */}
+              {renderField({
+                name: 'customer_last_name',
+                label: 'Apellido',
+                icon: <UserIcon />,
+                required: true,
+                placeholder: 'Apellido',
+              })}
+
+              {/* customer_phone */}
+              {renderField({
+                name: 'customer_phone',
+                label: 'Telefono',
+                icon: <PhoneIcon />,
+                required: true,
+                type: 'tel',
+                placeholder: 'WhatsApp',
+              })}
+
+              {/* address */}
+              {renderField({
+                name: 'address',
+                label: 'Direccion',
+                icon: <MapPinIcon />,
+                required: true,
+                placeholder: 'Calle carrera #casa',
+              })}
+
+              {/* address_extra */}
+              {renderField({
+                name: 'address_extra',
+                label: 'Complemento direccion',
+                icon: <MapPinIcon />,
+                required: false,
+                placeholder: 'Barrio y punto de referencia',
+              })}
+
+              {/* state */}
+              {renderField({
+                name: 'state',
+                label: 'Departamento',
+                icon: <MapPinIcon />,
+                required: true,
+                placeholder: 'Departamento',
+              })}
+
+              {/* city */}
+              {renderField({
+                name: 'city',
+                label: 'Ciudad',
+                icon: <MapPinIcon />,
+                required: true,
+                placeholder: 'Ciudad',
+              })}
+
+              {/* email */}
+              {renderField({
+                name: 'email',
+                label: 'Correo electronico',
+                icon: <MailIcon />,
+                required: false,
+                type: 'email',
+                placeholder: 'email@ejemplo.com',
+              })}
+
+              {/* notes */}
+              <div>
+                <label htmlFor="notes" className="mb-1.5 block text-sm font-bold text-gray-700">
+                  Notas adicionales
+                </label>
+                <div className="relative flex">
+                  <span className="pointer-events-none absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-tl-lg bg-gray-100">
+                    <NoteIcon />
+                  </span>
+                  <textarea
+                    id="notes"
+                    name="notes"
+                    rows={3}
+                    value={form.notes}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    placeholder="Indicaciones especiales para la entrega..."
+                    className="w-full resize-none rounded-lg border border-gray-200 bg-white py-3 pl-12 pr-4 text-sm outline-none transition-colors focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  />
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Trust badge */}
+          <div className="flex items-center justify-center gap-2 py-2 text-xs text-gray-400">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+            </svg>
+            Pago seguro contraentrega
+          </div>
         </form>
       </main>
+
+      {/* ── Sticky CTA button ── */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white px-4 pb-4 pt-3 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]">
+        <div className="mx-auto max-w-lg">
+          <button
+            type="submit"
+            form={undefined}
+            disabled={submitting}
+            onClick={handleSubmit}
+            className="w-full rounded-xl bg-amber-500 py-4 text-lg font-bold text-white shadow-lg transition-all hover:bg-amber-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {submitting ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Procesando...
+              </span>
+            ) : (
+              `Completar pedido - ${formatPrice(totalPrice, currency, country)}`
+            )}
+          </button>
+          <p className="mt-1.5 text-center text-xs text-gray-500">
+            Envio gratis &middot; Pagas al recibir
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
