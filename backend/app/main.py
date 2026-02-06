@@ -19,16 +19,13 @@ from app.config import settings
 
 app = FastAPI(title="MiniShop API", version="0.1.0")
 
-cors_kwargs = {
-    "allow_origins": settings.CORS_ORIGINS,
-    "allow_credentials": True,
-    "allow_methods": ["*"],
-    "allow_headers": ["*"],
-}
-if settings.CORS_ALLOW_REGEX:
-    cors_kwargs["allow_origin_regex"] = settings.CORS_ALLOW_REGEX
-
-app.add_middleware(CORSMiddleware, **cors_kwargs)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 app.include_router(auth_router)
