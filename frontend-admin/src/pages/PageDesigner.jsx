@@ -1,21 +1,17 @@
-import { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { useParams } from "react-router-dom";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import {
-  ArrowLeft,
-  Save,
-  Eye,
-  Monitor,
-  Tablet,
-  Smartphone,
-  Loader2,
-  Upload as UploadIcon,
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import grapesjs from "grapesjs";
 import "grapesjs/dist/css/grapes.min.css";
 import toast from "react-hot-toast";
 import client from "../api/client";
+import TopBar from "./designer/TopBar";
+import BlocksPanel from "./designer/BlocksPanel";
+import PropertiesPanel from "./designer/PropertiesPanel";
 import "./PageDesigner.css";
+
+/* ─── Dropshipping Blocks ──────────────────────────────────── */
 
 function registerDropshippingBlocks(editor) {
   const bm = editor.BlockManager;
@@ -318,14 +314,26 @@ function registerDropshippingBlocks(editor) {
   });
 }
 
+/* ─── Main Component ───────────────────────────────────────── */
+
 export default function PageDesigner() {
   const { id: designId } = useParams();
-  const navigate = useNavigate();
   const editorRef = useRef(null);
-  const containerRef = useRef(null);
+  const [editorInstance, setEditorInstance] = useState(null);
+  const [device, setDevice] = useState("Escritorio");
+  const [theme, setTheme] = useState("night");
+  const [saveStatus, setSaveStatus] = useState("saved");
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
-  const [device, setDevice] = useState("Desktop");
+  const [title, setTitle] = useState("");
+
+  // Refs for auto-save closure
+  const titleRef = useRef(title);
+  titleRef.current = title;
+  const saveStatusRef = useRef(saveStatus);
+  saveStatusRef.current = saveStatus;
+  const savingRef = useRef(saving);
+  savingRef.current = saving;
 
   const { data: design, isLoading } = useQuery({
     queryKey: ["pageDesign", designId],
@@ -336,91 +344,42 @@ export default function PageDesigner() {
   });
 
   const saveMutation = useMutation({
-    mutationFn: (payload) => client.put(`/admin/page-designs/${designId}`, payload),
+    mutationFn: (payload) =>
+      client.put(`/admin/page-designs/${designId}`, payload),
   });
 
+  // Set title once design loads
   useEffect(() => {
-    if (isLoading || !containerRef.current || editorRef.current) return;
+    if (design?.title) setTitle(design.title);
+  }, [design]);
+
+  // Init GrapesJS
+  useEffect(() => {
+    if (isLoading || editorRef.current) return;
 
     const editor = grapesjs.init({
-      container: containerRef.current,
+      container: "#gjs-canvas",
       fromElement: false,
       height: "100%",
       width: "auto",
       storageManager: false,
       panels: { defaults: [] },
+      styleManager: { sectors: [] },
+      layerManager: { appendTo: "#void" },
+      traitManager: { appendTo: "#void" },
+      selectorManager: { appendTo: "#void", componentFirst: true },
+      showDevices: false,
+      showToolbar: true,
       deviceManager: {
         devices: [
-          { name: "Desktop", width: "" },
+          { name: "Escritorio", width: "" },
           { name: "Tablet", width: "768px", widthMedia: "992px" },
-          { name: "Mobile", width: "375px", widthMedia: "480px" },
-        ],
-      },
-      styleManager: {
-        sectors: [
-          {
-            name: "General",
-            properties: ["display", "float", "position", "top", "right", "left", "bottom"],
-          },
-          {
-            name: "Dimensiones",
-            properties: ["width", "height", "max-width", "min-height", "margin", "padding"],
-          },
-          {
-            name: "Tipografia",
-            properties: [
-              "font-family", "font-size", "font-weight", "letter-spacing",
-              "color", "line-height", "text-align", "text-decoration", "text-shadow",
-            ],
-          },
-          {
-            name: "Decoraciones",
-            properties: [
-              "background-color", "background", "border-radius", "border",
-              "box-shadow", "opacity",
-            ],
-          },
+          { name: "Celular", width: "375px", widthMedia: "480px" },
         ],
       },
       canvas: {
         styles: [
           "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap",
-        ],
-      },
-      blockManager: {
-        appendTo: "#blocks-panel",
-      },
-      layerManager: {
-        appendTo: "#layers-panel",
-      },
-      selectorManager: {
-        appendTo: "#styles-panel",
-      },
-      styleManager: {
-        appendTo: "#styles-panel",
-        sectors: [
-          {
-            name: "General",
-            properties: ["display", "float", "position", "top", "right", "left", "bottom"],
-          },
-          {
-            name: "Dimensiones",
-            properties: ["width", "height", "max-width", "min-height", "margin", "padding"],
-          },
-          {
-            name: "Tipografia",
-            properties: [
-              "font-family", "font-size", "font-weight", "letter-spacing",
-              "color", "line-height", "text-align", "text-decoration", "text-shadow",
-            ],
-          },
-          {
-            name: "Decoraciones",
-            properties: [
-              "background-color", "background", "border-radius", "border",
-              "box-shadow", "opacity",
-            ],
-          },
         ],
       },
     });
@@ -431,54 +390,78 @@ export default function PageDesigner() {
       editor.loadProjectData(design.grapesjs_data);
     }
 
+    // Track unsaved changes
+    editor.on("component:add", () => setSaveStatus("unsaved"));
+    editor.on("component:remove", () => setSaveStatus("unsaved"));
+    editor.on("component:update", () => setSaveStatus("unsaved"));
+    editor.on("component:styleUpdate", () => setSaveStatus("unsaved"));
+
     editorRef.current = editor;
+    setEditorInstance(editor);
 
     return () => {
       editor.destroy();
       editorRef.current = null;
+      setEditorInstance(null);
     };
   }, [isLoading, design]);
 
-  const handleDeviceChange = (deviceName) => {
-    setDevice(deviceName);
-    editorRef.current?.setDevice(deviceName);
-  };
-
-  const handleSave = async () => {
-    const editor = editorRef.current;
-    if (!editor) return;
+  // Save handler (uses refs to avoid stale closures)
+  const handleSave = useCallback(async () => {
+    const ed = editorRef.current;
+    if (!ed) return;
     setSaving(true);
+    setSaveStatus("saving");
     try {
-      const projectData = editor.getProjectData();
-      const html = editor.getHtml();
-      const css = editor.getCss();
+      const projectData = ed.getProjectData();
+      const html = ed.getHtml();
+      const css = ed.getCss();
       await saveMutation.mutateAsync({
+        title: titleRef.current,
         grapesjs_data: projectData,
         html_content: html,
         css_content: css,
       });
-      toast.success("Diseno guardado");
+      setSaveStatus("saved");
+      toast.success("Guardado");
     } catch {
+      setSaveStatus("unsaved");
       toast.error("Error al guardar");
     } finally {
       setSaving(false);
     }
-  };
+  }, [saveMutation]);
+
+  // Keep handleSave ref current for auto-save
+  const handleSaveRef = useRef(handleSave);
+  handleSaveRef.current = handleSave;
+
+  // Auto-save every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (saveStatusRef.current === "unsaved" && !savingRef.current) {
+        handleSaveRef.current();
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handlePublish = async () => {
-    const editor = editorRef.current;
-    if (!editor) return;
+    const ed = editorRef.current;
+    if (!ed) return;
     setPublishing(true);
     try {
-      const projectData = editor.getProjectData();
-      const html = editor.getHtml();
-      const css = editor.getCss();
+      const projectData = ed.getProjectData();
+      const html = ed.getHtml();
+      const css = ed.getCss();
       await saveMutation.mutateAsync({
+        title: titleRef.current,
         grapesjs_data: projectData,
         html_content: html,
         css_content: css,
         is_published: true,
       });
+      setSaveStatus("saved");
       toast.success("Landing publicada");
     } catch {
       toast.error("Error al publicar");
@@ -487,122 +470,58 @@ export default function PageDesigner() {
     }
   };
 
-  const [activePanel, setActivePanel] = useState("blocks");
+  const handleDeviceChange = (deviceName) => {
+    setDevice(deviceName);
+    editorRef.current?.setDevice(deviceName);
+  };
+
+  const handleTitleChange = (newTitle) => {
+    setTitle(newTitle);
+    setSaveStatus("unsaved");
+  };
 
   if (isLoading) {
     return (
-      <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#1a1a2e" }}>
-        <Loader2 size={32} style={{ color: "#4DBEA4", animation: "spin 1s linear infinite" }} />
+      <div className="designer-loading">
+        <Loader2
+          size={32}
+          className="animate-spin"
+          style={{ color: "#4DBEA4" }}
+        />
       </div>
     );
   }
 
   return (
-    <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: "#1a1a2e", overflow: "hidden" }}>
-      {/* Top Toolbar */}
-      <div className="designer-topbar">
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button
-            onClick={() => navigate("/designs")}
-            style={{ background: "transparent", color: "#aaa", display: "flex", alignItems: "center", gap: 6 }}
-          >
-            <ArrowLeft size={16} />
-            Volver
-          </button>
-          <div style={{ width: 1, height: 24, background: "#333" }} />
-          <span style={{ color: "#fff", fontSize: 14, fontWeight: 600 }}>
-            {design?.title || "Editor"}
-          </span>
+    <div className={`designer-root ${theme}`}>
+      <TopBar
+        title={title}
+        onTitleChange={handleTitleChange}
+        saveStatus={saveStatus}
+        onSave={handleSave}
+        onPublish={handlePublish}
+        device={device}
+        onDeviceChange={handleDeviceChange}
+        theme={theme}
+        onThemeToggle={() =>
+          setTheme((t) => (t === "night" ? "day" : "night"))
+        }
+        saving={saving}
+        publishing={publishing}
+      />
+
+      <div className="designer-body">
+        <BlocksPanel editor={editorInstance} />
+
+        <div className="designer-canvas-wrap">
+          <div id="gjs-canvas" />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {/* Device toggle */}
-          <div style={{ display: "flex", gap: 2, background: "#252540", borderRadius: 6, padding: 2 }}>
-            {[
-              { name: "Desktop", icon: <Monitor size={14} /> },
-              { name: "Tablet", icon: <Tablet size={14} /> },
-              { name: "Mobile", icon: <Smartphone size={14} /> },
-            ].map((d) => (
-              <button
-                key={d.name}
-                onClick={() => handleDeviceChange(d.name)}
-                style={{
-                  background: device === d.name ? "#4DBEA4" : "transparent",
-                  color: device === d.name ? "#fff" : "#888",
-                  padding: "4px 8px",
-                  borderRadius: 4,
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
-                {d.icon}
-              </button>
-            ))}
-          </div>
-
-          <div style={{ width: 1, height: 24, background: "#333" }} />
-
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            style={{ background: "#252540", color: "#ddd", display: "flex", alignItems: "center", gap: 6 }}
-          >
-            {saving ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <Save size={14} />}
-            Guardar
-          </button>
-          <button
-            onClick={handlePublish}
-            disabled={publishing}
-            style={{ background: "#4DBEA4", color: "#fff", display: "flex", alignItems: "center", gap: 6 }}
-          >
-            {publishing ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <UploadIcon size={14} />}
-            Publicar
-          </button>
-        </div>
+        <PropertiesPanel editor={editorInstance} />
       </div>
 
-      {/* Main Editor Area */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-        {/* Left Side Panel - Blocks/Layers */}
-        <div style={{ width: 260, background: "#1a1a2e", borderRight: "1px solid #2a2a3a", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-          {/* Panel tabs */}
-          <div style={{ display: "flex", borderBottom: "1px solid #2a2a3a" }}>
-            {[
-              { key: "blocks", label: "Bloques" },
-              { key: "layers", label: "Capas" },
-            ].map((tab) => (
-              <button
-                key={tab.key}
-                onClick={() => setActivePanel(tab.key)}
-                style={{
-                  flex: 1,
-                  padding: "10px 0",
-                  background: "transparent",
-                  color: activePanel === tab.key ? "#4DBEA4" : "#888",
-                  borderBottom: activePanel === tab.key ? "2px solid #4DBEA4" : "2px solid transparent",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  border: "none",
-                  borderBottomWidth: 2,
-                  borderBottomStyle: "solid",
-                  borderBottomColor: activePanel === tab.key ? "#4DBEA4" : "transparent",
-                }}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-          <div id="blocks-panel" style={{ flex: 1, overflowY: "auto", display: activePanel === "blocks" ? "block" : "none" }} />
-          <div id="layers-panel" style={{ flex: 1, overflowY: "auto", display: activePanel === "layers" ? "block" : "none" }} />
-        </div>
-
-        {/* Canvas */}
-        <div ref={containerRef} style={{ flex: 1 }} />
-
-        {/* Right Side Panel - Styles */}
-        <div id="styles-panel" style={{ width: 260, background: "#1a1a2e", borderLeft: "1px solid #2a2a3a", overflowY: "auto" }} />
-      </div>
+      {/* Hidden container for native GrapesJS managers */}
+      <div id="void" style={{ display: "none" }} />
     </div>
   );
 }
