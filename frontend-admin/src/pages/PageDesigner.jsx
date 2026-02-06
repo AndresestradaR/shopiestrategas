@@ -16,6 +16,71 @@ import "./PageDesigner.css";
 function registerDropshippingBlocks(editor) {
   const bm = editor.BlockManager;
 
+  // ===== BLOQUES PARA FLUJO CON IMAGENES (dropshipping real) =====
+
+  // A. Imagen Full Width
+  bm.add("imagen-full", {
+    label: "Imagen Full Width",
+    category: "Imagenes",
+    content: {
+      type: "image",
+      tagName: "img",
+      attributes: {
+        src: "https://placehold.co/1080x1350/f0f4f8/94a3b8?text=Haz+clic+y+sube+tu+imagen",
+        alt: "Imagen de la landing",
+      },
+      style: {
+        width: "100%",
+        "max-width": "100%",
+        display: "block",
+        margin: "0 auto",
+      },
+      "custom-name": "Imagen",
+    },
+  });
+
+  // B. Boton de Compra (suelto, para poner entre imagenes)
+  bm.add("boton-compra", {
+    label: "Boton de Compra",
+    category: "Imagenes",
+    content: `
+      <div style="padding:16px 20px;text-align:center;font-family:Inter,sans-serif;background:#fff;">
+        <a href="#checkout" style="display:inline-block;width:100%;max-width:500px;background:#4DBEA4;color:#fff;padding:18px 40px;border-radius:12px;font-size:20px;font-weight:700;text-decoration:none;text-align:center;box-shadow:0 4px 15px rgba(77,190,164,0.4);">
+          Hacer pedido - Pago al recibir
+        </a>
+      </div>
+    `,
+  });
+
+  // C. Imagen + Boton (combo mas usado)
+  bm.add("imagen-boton", {
+    label: "Imagen + Boton",
+    category: "Imagenes",
+    content: `
+      <section style="font-family:Inter,sans-serif;margin:0;padding:0;">
+        <img src="https://placehold.co/1080x1350/f0f4f8/94a3b8?text=Sube+tu+imagen+aqui" alt="Seccion" style="width:100%;display:block;"/>
+        <div style="padding:16px 20px;text-align:center;background:#fff;">
+          <a href="#checkout" style="display:inline-block;width:100%;max-width:500px;background:#4DBEA4;color:#fff;padding:18px 40px;border-radius:12px;font-size:20px;font-weight:700;text-decoration:none;text-align:center;box-shadow:0 4px 15px rgba(77,190,164,0.4);">
+            Hacer pedido - Envio gratis
+          </a>
+        </div>
+      </section>
+    `,
+  });
+
+  // D. Separador con color de fondo
+  bm.add("separador-color", {
+    label: "Franja de Color",
+    category: "Imagenes",
+    content: `
+      <div style="padding:20px;text-align:center;background:#4DBEA4;font-family:Inter,sans-serif;">
+        <p style="margin:0;color:#fff;font-size:18px;font-weight:700;">Envio GRATIS a todo el pais - Paga al recibir</p>
+      </div>
+    `,
+  });
+
+  // ===== SECCIONES HTML =====
+
   // 1. Hero Principal
   bm.add("hero-principal", {
     label: "Hero Principal",
@@ -302,13 +367,13 @@ function registerDropshippingBlocks(editor) {
     `,
   });
 
-  // 12. Boton CTA Flotante
+  // 12. Boton CTA Flotante (sticky para funcionar en el iframe de GrapesJS)
   bm.add("floating-cta", {
     label: "Boton CTA Flotante",
     category: "Basicos",
     content: `
-      <div style="position:fixed;bottom:0;left:0;right:0;background:#fff;padding:12px 16px;box-shadow:0 -4px 20px rgba(0,0,0,0.1);z-index:999;font-family:Inter,sans-serif;">
-        <a href="#" style="display:block;background:#4DBEA4;color:#fff;padding:14px;border-radius:10px;font-size:16px;font-weight:700;text-decoration:none;text-align:center;box-shadow:0 4px 15px rgba(77,190,164,0.4);">Comprar Ahora - Pago Contraentrega</a>
+      <div style="position:sticky;bottom:0;left:0;right:0;background:#fff;padding:12px 16px;box-shadow:0 -4px 20px rgba(0,0,0,0.1);z-index:999;font-family:Inter,sans-serif;">
+        <a href="#checkout" style="display:block;background:#4DBEA4;color:#fff;padding:16px;border-radius:10px;font-size:18px;font-weight:700;text-decoration:none;text-align:center;box-shadow:0 4px 15px rgba(77,190,164,0.4);">Comprar Ahora - Pago Contraentrega</a>
       </div>
     `,
   });

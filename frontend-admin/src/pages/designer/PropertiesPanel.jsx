@@ -9,12 +9,60 @@ import {
   AlignRight,
   Bold,
 } from "lucide-react";
+import toast from "react-hot-toast";
+import client from "../../api/client";
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 export default function PropertiesPanel({ editor }) {
   const [selected, setSelected] = useState(null);
   const [tab, setTab] = useState("estilo");
   const [styles, setStyles] = useState({});
   const [content, setContent] = useState({ text: "", src: "", href: "", tag: "" });
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Solo se permiten imagenes");
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Imagen muy grande (maximo 10MB)");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await client.post("/admin/media/upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      const imageUrl = res.data.url;
+      const fullUrl = imageUrl.startsWith("/")
+        ? `${API_BASE_URL}${imageUrl}`
+        : imageUrl;
+
+      if (selected) {
+        selected.setAttributes({ src: fullUrl });
+        setContent((p) => ({ ...p, src: fullUrl }));
+      }
+
+      toast.success("Imagen subida");
+    } catch (err) {
+      console.error("Upload error:", err);
+      toast.error("Error al subir imagen");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
 
   const readStyles = useCallback((component) => {
     if (!component) return;
@@ -144,9 +192,65 @@ export default function PropertiesPanel({ editor }) {
 
             {content.tag === "img" && (
               <>
-                <label className="prop-label" style={{ marginTop: 16 }}>
-                  <Image size={14} /> URL de imagen
+                {/* Preview */}
+                {content.src && !content.src.includes("placehold.co") && (
+                  <div style={{ marginBottom: 12 }}>
+                    <label className="prop-label">Vista previa</label>
+                    <img
+                      src={
+                        content.src.startsWith("/")
+                          ? `${API_BASE_URL}${content.src}`
+                          : content.src
+                      }
+                      alt="Preview"
+                      style={{
+                        width: "100%",
+                        borderRadius: 8,
+                        border: "1px solid var(--panel-border)",
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Upload button */}
+                <label className="prop-label" style={{ marginTop: 12 }}>
+                  Imagen
                 </label>
+                <div style={{ marginBottom: 12 }}>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                      padding: "14px 16px",
+                      background: "#4DBEA4",
+                      color: "#fff",
+                      borderRadius: 10,
+                      cursor: uploading ? "wait" : "pointer",
+                      fontWeight: 600,
+                      fontSize: 14,
+                      transition: "opacity 0.2s",
+                      opacity: uploading ? 0.6 : 1,
+                      width: "100%",
+                      boxSizing: "border-box",
+                    }}
+                  >
+                    {uploading
+                      ? "Subiendo..."
+                      : "Subir imagen desde tu computador"}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: "none" }}
+                      onChange={handleImageUpload}
+                      disabled={uploading}
+                    />
+                  </label>
+                </div>
+
+                {/* Manual URL */}
+                <label className="prop-label">O pegar URL</label>
                 <input
                   className="prop-input"
                   value={content.src}
