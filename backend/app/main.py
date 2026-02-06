@@ -17,6 +17,8 @@ from app.api.admin.products import router as products_router
 from app.api.auth import router as auth_router
 from app.api.store.catalog import router as store_catalog_router
 from app.api.store.checkout import router as store_checkout_router
+from app.api.admin.page_designs import router as page_designs_router
+from app.api.store.pages import router as store_pages_router
 from app.config import settings
 from app.database import Base, engine
 # Import all models so they register with Base.metadata
@@ -54,6 +56,8 @@ app.include_router(analytics_router)
 app.include_router(carts_router)
 app.include_router(store_catalog_router)
 app.include_router(store_checkout_router)
+app.include_router(page_designs_router)
+app.include_router(store_pages_router)
 
 # Mount uploads directory for serving static files
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)

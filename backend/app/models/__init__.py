@@ -9,6 +9,7 @@ from app.models.customer import Customer
 from app.models.store_app import StoreApp
 from app.models.testimonial import Testimonial
 from app.models.store_visit import StoreVisit
+from app.models.page_design import PageDesign  # noqa: F401
 
 __all__ = [
     "Tenant",
@@ -26,4 +27,5 @@ __all__ = [
     "StoreApp",
     "Testimonial",
     "StoreVisit",
+    "PageDesign",
 ]

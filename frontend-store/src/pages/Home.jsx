@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import useStore from '../hooks/useStore';
+import useStore, { getSlug } from '../hooks/useStore';
 import ProductCard from '../components/ProductCard';
 import { usePixel } from '../components/PixelProvider';
 
@@ -62,15 +62,40 @@ function TrustBadges() {
   );
 }
 
+// CustomLanding renders owner-authored HTML+CSS from the GrapesJS visual editor.
+// Content is created by the authenticated store owner, not end-user input.
+function CustomLanding({ page }) {
+  return (
+    <>
+      <style dangerouslySetInnerHTML={{ __html: page.css_content || '' }} />
+      <div dangerouslySetInnerHTML={{ __html: page.html_content || '' }} />
+    </>
+  );
+}
+
 export default function Home() {
   const { config, products, isLoading, error } = useStore();
   const { trackEvent } = usePixel();
+  const [customPage, setCustomPage] = useState(null);
+  const [loadingPage, setLoadingPage] = useState(true);
 
   useEffect(() => {
     trackEvent('PageView');
   }, [trackEvent]);
 
-  if (isLoading) {
+  useEffect(() => {
+    const slug = getSlug();
+    const apiBase = import.meta.env.VITE_API_URL || '';
+    fetch(`${apiBase}/api/store/${slug}/pages/home`)
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => { if (data?.html_content) setCustomPage(data); })
+      .catch(() => {})
+      .finally(() => setLoadingPage(false));
+  }, []);
+
+  if (customPage) return <CustomLanding page={customPage} />;
+
+  if (isLoading || loadingPage) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-[var(--color-primary)]" />

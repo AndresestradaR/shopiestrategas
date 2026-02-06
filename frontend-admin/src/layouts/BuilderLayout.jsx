@@ -12,6 +12,7 @@ import {
   Globe,
   Crosshair,
   BarChart3,
+  Paintbrush,
   ExternalLink,
   ArrowLeft,
 } from "lucide-react";
@@ -23,6 +24,7 @@ const navSections = [
       { to: "/", icon: LayoutDashboard, text: "Dashboard" },
       { to: "/products", icon: Package, text: "Productos" },
       { to: "/orders", icon: ShoppingCart, text: "Pedidos" },
+      { to: "/designs", icon: Paintbrush, text: "Disenar tienda" },
     ],
   },
   {
