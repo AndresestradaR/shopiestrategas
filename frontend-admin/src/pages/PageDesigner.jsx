@@ -478,6 +478,7 @@ export default function PageDesigner() {
     });
 
     registerDropshippingBlocks(editor);
+    console.log("[PageDesigner] Blocks registered:", editor.BlockManager.getAll().length);
 
     // Inject custom CSS into GrapesJS iframe (animations + body max-width)
     const injectCanvasStyles = () => {
@@ -502,12 +503,15 @@ export default function PageDesigner() {
         .anim-bounce{animation:cta-bounce 2s ease-in-out infinite}
       `;
       iframeDoc.head.appendChild(style);
+      console.log("[PageDesigner] Canvas styles injected");
     };
 
     editor.on("load", () => {
       injectCanvasStyles();
-      // Refresh after panels render so GrapesJS recalculates toolbar/selection positions
-      setTimeout(() => editor.refresh(), 500);
+      setTimeout(() => {
+        editor.refresh();
+        console.log("[PageDesigner] Editor refreshed");
+      }, 300);
     });
     editor.on("canvas:frame:load", injectCanvasStyles);
 
@@ -520,7 +524,14 @@ export default function PageDesigner() {
     });
 
     if (design?.grapesjs_data) {
-      editor.loadProjectData(design.grapesjs_data);
+      try {
+        editor.loadProjectData(design.grapesjs_data);
+        console.log("[PageDesigner] Project data loaded, components:", editor.getComponents().length);
+      } catch (e) {
+        console.error("[PageDesigner] Error loading project data:", e);
+      }
+    } else {
+      console.log("[PageDesigner] No project data to load");
     }
 
     // Track unsaved changes

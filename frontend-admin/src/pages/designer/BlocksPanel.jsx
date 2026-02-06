@@ -219,14 +219,21 @@ export default function BlocksPanel({ editor }) {
   const [activeTab, setActiveTab] = useState(null);
 
   const handleInsertBlock = (blockId, customContent) => {
-    if (!editor) return;
+    console.log("[BlocksPanel] handleInsertBlock:", { blockId, customContent: !!customContent, editor: !!editor });
+    if (!editor) { console.error("[BlocksPanel] Editor is null!"); return; }
+
     if (customContent) {
-      editor.addComponents(customContent);
+      const added = editor.addComponents(customContent);
+      console.log("[BlocksPanel] Added with custom content:", added?.length);
     } else {
       const block = editor.BlockManager.get(blockId);
+      console.log("[BlocksPanel] Block from BlockManager:", blockId, !!block);
       if (block) {
         const content = block.get("content");
-        editor.addComponents(content);
+        const added = editor.addComponents(content);
+        console.log("[BlocksPanel] Added components:", added?.length);
+      } else {
+        console.error("[BlocksPanel] Block not found:", blockId);
       }
     }
   };
