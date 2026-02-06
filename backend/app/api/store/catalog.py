@@ -30,7 +30,10 @@ async def get_store_config(slug: str, db: AsyncSession = Depends(get_db)):
     config = result.scalar_one_or_none()
     if not config:
         raise HTTPException(status_code=404, detail="Store config not found")
-    return config
+    # Build response with store_name from tenant
+    data = {c.key: getattr(config, c.key) for c in StoreConfig.__table__.columns}
+    data["store_name"] = tenant.store_name
+    return data
 
 
 @router.get("/{slug}/products", response_model=list[ProductResponse])

@@ -15,10 +15,21 @@ const queryClient = new QueryClient({
   },
 });
 
+// Compute basename dynamically: /tienda/{slug}
+// The URL pattern is /tienda/{slug}/... so basename includes the slug
+function getBasename() {
+  const parts = window.location.pathname.split('/').filter(Boolean);
+  // parts[0] = "tienda", parts[1] = slug
+  if (parts.length >= 2 && parts[0] === 'tienda') {
+    return `/tienda/${parts[1]}`;
+  }
+  return '/tienda';
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter basename="/tienda">
+      <BrowserRouter basename={getBasename()}>
         <App />
       </BrowserRouter>
     </QueryClientProvider>

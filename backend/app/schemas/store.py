@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 class StoreConfigResponse(BaseModel):
     tenant_id: uuid.UUID
+    store_name: str | None = None
     logo_url: str | None = None
     primary_color: str
     secondary_color: str
