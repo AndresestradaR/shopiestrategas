@@ -7,23 +7,25 @@ import {
   Loader2,
   AlertCircle,
   Trash2,
-  Edit3,
   Eye,
   EyeOff,
+  X,
+  ShoppingBag,
+  Home,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import client from "../api/client";
 
 const PAGE_TYPE_LABELS = {
   home: "Pagina de inicio",
-  product: "Template de producto",
+  product: "Landing de producto",
   custom: "Pagina libre",
 };
 
 export default function PageDesigns() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [creating, setCreating] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   const { data: designs, isLoading, isError, error } = useQuery({
     queryKey: ["pageDesigns"],
@@ -41,22 +43,6 @@ export default function PageDesigns() {
     },
     onError: () => toast.error("Error al eliminar"),
   });
-
-  const handleCreate = async () => {
-    setCreating(true);
-    try {
-      const res = await client.post("/admin/page-designs", {
-        page_type: "home",
-        title: "Mi Landing",
-        slug: "home",
-      });
-      navigate(`/designer/${res.data.id}`);
-    } catch (err) {
-      toast.error(err.response?.data?.detail || "Error al crear el diseno");
-    } finally {
-      setCreating(false);
-    }
-  };
 
   const handleDelete = (id, e) => {
     e.stopPropagation();
@@ -85,16 +71,11 @@ export default function PageDesigns() {
           </p>
         </div>
         <button
-          onClick={handleCreate}
-          disabled={creating}
+          onClick={() => setShowModal(true)}
           className="inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
           style={{ backgroundColor: "#4DBEA4" }}
         >
-          {creating ? (
-            <Loader2 size={18} className="animate-spin" />
-          ) : (
-            <Plus size={18} />
-          )}
+          <Plus size={18} />
           Crear landing
         </button>
       </div>
@@ -124,6 +105,7 @@ export default function PageDesigns() {
               <tr className="border-b border-gray-200 bg-gray-50">
                 <th className="px-4 py-3 font-medium text-gray-500">Titulo</th>
                 <th className="px-4 py-3 font-medium text-gray-500">Tipo</th>
+                <th className="px-4 py-3 font-medium text-gray-500">Producto</th>
                 <th className="px-4 py-3 font-medium text-gray-500">Estado</th>
                 <th className="px-4 py-3 font-medium text-gray-500">Fecha</th>
                 <th className="px-4 py-3 font-medium text-gray-500" />
@@ -141,6 +123,9 @@ export default function PageDesigns() {
                   </td>
                   <td className="px-4 py-3 text-gray-600">
                     {PAGE_TYPE_LABELS[d.page_type] || d.page_type}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {d.product_name || "—"}
                   </td>
                   <td className="px-4 py-3">
                     {d.is_published ? (
@@ -182,6 +167,184 @@ export default function PageDesigns() {
             </tbody>
           </table>
         )}
+      </div>
+
+      {/* Creation Modal */}
+      {showModal && (
+        <CreateLandingModal
+          onClose={() => setShowModal(false)}
+          onCreated={(id) => {
+            setShowModal(false);
+            navigate(`/designer/${id}`);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ─── Creation Modal ─── */
+
+function CreateLandingModal({ onClose, onCreated }) {
+  const [pageType, setPageType] = useState("product");
+  const [productId, setProductId] = useState("");
+  const [title, setTitle] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  const { data: products, isLoading: loadingProducts } = useQuery({
+    queryKey: ["products-for-landing"],
+    queryFn: async () => {
+      const res = await client.get("/admin/products");
+      return res.data;
+    },
+  });
+
+  const selectedProduct = products?.find((p) => p.id === productId);
+
+  const handleCreate = async () => {
+    setCreating(true);
+    try {
+      const payload = {
+        page_type: pageType,
+        title: title || (pageType === "home" ? "Mi Landing" : `Landing - ${selectedProduct?.name || "Producto"}`),
+      };
+      if (pageType === "product" && productId) {
+        payload.product_id = productId;
+      }
+      const res = await client.post("/admin/page-designs", payload);
+      toast.success("Landing creada");
+      onCreated(res.data.id);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Error al crear la landing");
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  const canCreate =
+    pageType === "home" ||
+    (pageType === "product" && productId);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={onClose}>
+      <div
+        className="relative w-full max-w-md rounded-xl bg-white p-6 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 text-gray-400 hover:text-gray-600"
+        >
+          <X size={20} />
+        </button>
+
+        <h2 className="mb-1 text-lg font-bold text-gray-900">Crear nueva landing</h2>
+        <p className="mb-5 text-sm text-gray-500">Selecciona el tipo de pagina que quieres crear</p>
+
+        {/* Type selector */}
+        <div className="mb-5 grid grid-cols-2 gap-3">
+          <button
+            onClick={() => setPageType("home")}
+            className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all ${
+              pageType === "home"
+                ? "border-[#4DBEA4] bg-[#4DBEA4]/5"
+                : "border-gray-200 hover:border-gray-300"
+            }`}
+          >
+            <Home size={24} className={pageType === "home" ? "text-[#4DBEA4]" : "text-gray-400"} />
+            <span className={`text-sm font-medium ${pageType === "home" ? "text-[#4DBEA4]" : "text-gray-600"}`}>
+              Pagina de inicio
+            </span>
+            <span className="text-xs text-gray-400">Landing principal</span>
+          </button>
+          <button
+            onClick={() => setPageType("product")}
+            className={`flex flex-col items-center gap-2 rounded-lg border-2 p-4 transition-all ${
+              pageType === "product"
+                ? "border-[#4DBEA4] bg-[#4DBEA4]/5"
+                : "border-gray-200 hover:border-gray-300"
+            }`}
+          >
+            <ShoppingBag size={24} className={pageType === "product" ? "text-[#4DBEA4]" : "text-gray-400"} />
+            <span className={`text-sm font-medium ${pageType === "product" ? "text-[#4DBEA4]" : "text-gray-600"}`}>
+              Landing de producto
+            </span>
+            <span className="text-xs text-gray-400">Vinculada a producto</span>
+          </button>
+        </div>
+
+        {/* Product selector (only for product type) */}
+        {pageType === "product" && (
+          <div className="mb-4">
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">
+              Producto vinculado
+            </label>
+            {loadingProducts ? (
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <Loader2 size={14} className="animate-spin" />
+                Cargando productos...
+              </div>
+            ) : !products || products.length === 0 ? (
+              <p className="text-sm text-red-500">No tienes productos. Crea uno primero.</p>
+            ) : (
+              <select
+                value={productId}
+                onChange={(e) => {
+                  setProductId(e.target.value);
+                  const prod = products.find((p) => p.id === e.target.value);
+                  if (prod && !title) {
+                    setTitle(`Landing - ${prod.name}`);
+                  }
+                }}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#4DBEA4] focus:outline-none focus:ring-1 focus:ring-[#4DBEA4]"
+              >
+                <option value="">Selecciona un producto...</option>
+                {products.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
+
+        {/* Title */}
+        <div className="mb-5">
+          <label className="mb-1.5 block text-sm font-medium text-gray-700">
+            Titulo (opcional)
+          </label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder={pageType === "home" ? "Mi Landing" : "Landing - Producto"}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#4DBEA4] focus:outline-none focus:ring-1 focus:ring-[#4DBEA4]"
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleCreate}
+            disabled={!canCreate || creating}
+            className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white shadow-sm transition-opacity hover:opacity-90 disabled:opacity-50"
+            style={{ backgroundColor: "#4DBEA4" }}
+          >
+            {creating ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : (
+              <Plus size={16} />
+            )}
+            Crear landing
+          </button>
+        </div>
       </div>
     </div>
   );

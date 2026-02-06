@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import useStore, { getSlug } from '../hooks/useStore';
 import ProductCard from '../components/ProductCard';
 import { usePixel } from '../components/PixelProvider';
@@ -65,11 +65,31 @@ function TrustBadges() {
 // CustomLanding renders owner-authored HTML+CSS from the GrapesJS visual editor.
 // Content is created by the authenticated store owner, not end-user input.
 function CustomLanding({ page }) {
+  const navigate = useNavigate();
+
+  const handleClick = useCallback(
+    (e) => {
+      const link = e.target.closest('a[href], button[data-action]');
+      if (!link) return;
+
+      const href = link.getAttribute('href') || '';
+      const action = link.getAttribute('data-action') || '';
+
+      if (href === '#checkout' || href.includes('/checkout') || action === 'checkout') {
+        e.preventDefault();
+        if (page?.product_slug) {
+          navigate(`/checkout/${page.product_slug}`);
+        }
+      }
+    },
+    [page, navigate]
+  );
+
   return (
-    <>
+    <div onClick={handleClick}>
       <style dangerouslySetInnerHTML={{ __html: page.css_content || '' }} />
       <div dangerouslySetInnerHTML={{ __html: page.html_content || '' }} />
-    </>
+    </div>
   );
 }
 

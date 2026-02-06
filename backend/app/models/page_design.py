@@ -11,11 +11,12 @@ from app.database import Base
 class PageDesign(Base):
     __tablename__ = "page_designs"
     __table_args__ = (
-        UniqueConstraint("tenant_id", "page_type", "slug", name="uq_pagedesign_tenant_type_slug"),
+        UniqueConstraint("tenant_id", "slug", name="uq_pagedesign_tenant_slug"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     tenant_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("tenants.id"), nullable=False)
+    product_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="SET NULL"), nullable=True)
 
     page_type: Mapped[str] = mapped_column(String(50), nullable=False, default="home")
     title: Mapped[str] = mapped_column(String(255), nullable=False, default="Mi Landing")
@@ -33,3 +34,4 @@ class PageDesign(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     tenant = relationship("Tenant")
+    product = relationship("Product", foreign_keys=[product_id])

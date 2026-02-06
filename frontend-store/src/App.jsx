@@ -8,6 +8,7 @@ import Product from './pages/Product';
 import Checkout from './pages/Checkout';
 import Confirm from './pages/Confirm';
 import Page from './pages/Page';
+import LandingPage from './pages/LandingPage';
 
 function AppShell() {
   const { config, isLoading } = useStore();
@@ -64,6 +65,7 @@ function AppShell() {
         <Route path="/checkout/:productSlug" element={<Checkout />} />
         <Route path="/confirmacion/:orderId" element={<Confirm />} />
         <Route path="/p/:pageSlug" element={<Page />} />
+        <Route path="/landing/:pageSlug" element={<LandingPage />} />
       </Routes>
       <WhatsAppButton whatsappNumber={config?.whatsapp_number} />
     </PixelProvider>
