@@ -479,24 +479,37 @@ export default function PageDesigner() {
 
     registerDropshippingBlocks(editor);
 
-    // Inject animation CSS into GrapesJS iframe
-    editor.on("load", () => {
+    // Inject custom CSS into GrapesJS iframe (animations + body max-width)
+    const injectCanvasStyles = () => {
       const iframeDoc = editor.Canvas.getDocument();
-      if (iframeDoc) {
-        const style = iframeDoc.createElement("style");
-        style.textContent = `
-          @keyframes cta-shake{0%,100%{transform:translateX(0)}15%{transform:translateX(-4px)}30%{transform:translateX(4px)}45%{transform:translateX(-3px)}60%{transform:translateX(2px)}}
-          @keyframes cta-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
-          @keyframes cta-shine{0%{background-position:200% center}100%{background-position:-200% center}}
-          @keyframes cta-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-          .anim-shake{animation:cta-shake 2.5s ease-in-out infinite}
-          .anim-pulse{animation:cta-pulse 2s ease-in-out infinite}
-          .anim-shine{background-size:200% auto;animation:cta-shine 3s linear infinite}
-          .anim-bounce{animation:cta-bounce 2s ease-in-out infinite}
-        `;
-        iframeDoc.head.appendChild(style);
-      }
+      if (!iframeDoc) return;
+      // Avoid duplicate injection
+      if (iframeDoc.getElementById("shopie-custom-styles")) return;
+      const style = iframeDoc.createElement("style");
+      style.id = "shopie-custom-styles";
+      style.textContent = `
+        body {
+          max-width: 600px !important;
+          margin: 0 auto !important;
+        }
+        @keyframes cta-shake{0%,100%{transform:translateX(0)}15%{transform:translateX(-6px)}30%{transform:translateX(6px)}45%{transform:translateX(-4px)}60%{transform:translateX(3px)}}
+        @keyframes cta-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+        @keyframes cta-shine{0%{background-position:200% center}100%{background-position:-200% center}}
+        @keyframes cta-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+        .anim-shake{animation:cta-shake 2.5s ease-in-out infinite}
+        .anim-pulse{animation:cta-pulse 2s ease-in-out infinite}
+        .anim-shine{background-size:200% auto;animation:cta-shine 3s linear infinite}
+        .anim-bounce{animation:cta-bounce 2s ease-in-out infinite}
+      `;
+      iframeDoc.head.appendChild(style);
+    };
+
+    editor.on("load", () => {
+      injectCanvasStyles();
+      // Refresh after panels render so GrapesJS recalculates toolbar/selection positions
+      setTimeout(() => editor.refresh(), 500);
     });
+    editor.on("canvas:frame:load", injectCanvasStyles);
 
     // Override open-assets command to prevent native modal
     editor.Commands.add("open-assets", {

@@ -30,6 +30,7 @@ export default function PropertiesPanel({ editor }) {
   const [content, setContent] = useState({ text: "", src: "", href: "", tag: "" });
   const [uploading, setUploading] = useState(false);
   const [animClass, setAnimClass] = useState("");
+  const [animSpeed, setAnimSpeed] = useState(25);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -108,6 +109,7 @@ export default function PropertiesPanel({ editor }) {
   const readAnimClass = useCallback((component) => {
     if (!component) {
       setAnimClass("");
+      setAnimSpeed(25);
       return;
     }
     const classes = component.getClasses();
@@ -115,6 +117,14 @@ export default function PropertiesPanel({ editor }) {
       (o) => o.value && classes.includes(o.value)
     );
     setAnimClass(found ? found.value : "");
+    // Read current animation duration
+    const s = component.getStyle();
+    const dur = s["animation-duration"];
+    if (dur) {
+      setAnimSpeed(Math.round(parseFloat(dur) * 10));
+    } else {
+      setAnimSpeed(25);
+    }
   }, []);
 
   useEffect(() => {
@@ -136,6 +146,7 @@ export default function PropertiesPanel({ editor }) {
       setStyles({});
       setContent({ text: "", src: "", href: "", tag: "" });
       setAnimClass("");
+      setAnimSpeed(25);
     };
     const onStyleUpdate = () => {
       const sel = editor.getSelected();
@@ -171,8 +182,13 @@ export default function PropertiesPanel({ editor }) {
     ANIMATION_OPTIONS.forEach((o) => {
       if (o.value) selected.removeClass(o.value);
     });
-    // Add the new one
-    if (value) selected.addClass(value);
+    if (value) {
+      selected.addClass(value);
+      const seconds = (animSpeed / 10).toFixed(1);
+      selected.addStyle({ "animation-duration": `${seconds}s` });
+    } else {
+      selected.addStyle({ "animation-duration": "" });
+    }
     setAnimClass(value);
   };
 
@@ -389,6 +405,40 @@ export default function PropertiesPanel({ editor }) {
                     </button>
                   ))}
                 </div>
+
+                {/* Speed slider — only when animation is selected */}
+                {animClass && (
+                  <>
+                    <label className="prop-label" style={{ marginTop: 12 }}>
+                      Velocidad de animacion
+                    </label>
+                    <div className="prop-slider-row">
+                      <span style={{ fontSize: 11, color: "var(--panel-text-muted)" }}>Rapido</span>
+                      <input
+                        type="range"
+                        min="3"
+                        max="40"
+                        value={animSpeed}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          setAnimSpeed(val);
+                          const seconds = (val / 10).toFixed(1);
+                          if (selected) {
+                            selected.addStyle({ "animation-duration": `${seconds}s` });
+                          }
+                        }}
+                        className="prop-slider"
+                      />
+                      <span style={{ fontSize: 11, color: "var(--panel-text-muted)" }}>Lento</span>
+                    </div>
+                    <span
+                      className="prop-slider-value"
+                      style={{ textAlign: "center", display: "block", marginTop: 4 }}
+                    >
+                      {(animSpeed / 10).toFixed(1)}s
+                    </span>
+                  </>
+                )}
               </>
             )}
           </div>
