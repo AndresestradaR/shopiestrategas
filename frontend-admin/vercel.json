@@ -2,6 +2,7 @@
   "rewrites": [
     { "source": "/constructor/assets/:path*", "destination": "/assets/:path*" },
     { "source": "/constructor", "destination": "/index.html" },
-    { "source": "/constructor/:path*", "destination": "/index.html" }
+    { "source": "/constructor/:path*", "destination": "/index.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
