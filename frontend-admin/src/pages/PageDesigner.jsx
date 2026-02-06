@@ -489,9 +489,19 @@ export default function PageDesigner() {
       const style = iframeDoc.createElement("style");
       style.id = "shopie-custom-styles";
       style.textContent = `
+        * { box-sizing: border-box; }
         body {
           max-width: 600px !important;
           margin: 0 auto !important;
+          overflow-x: hidden !important;
+        }
+        img {
+          max-width: 100% !important;
+          height: auto !important;
+        }
+        section, div {
+          max-width: 100% !important;
+          box-sizing: border-box !important;
         }
         @keyframes cta-shake{0%,100%{transform:translateX(0)}15%{transform:translateX(-6px)}30%{transform:translateX(6px)}45%{transform:translateX(-4px)}60%{transform:translateX(3px)}}
         @keyframes cta-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
