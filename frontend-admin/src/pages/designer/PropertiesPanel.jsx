@@ -8,11 +8,20 @@ import {
   AlignCenter,
   AlignRight,
   Bold,
+  Upload,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import client from "../../api/client";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "";
+
+const ANIMATION_OPTIONS = [
+  { value: "", label: "Ninguna" },
+  { value: "anim-shake", label: "Shake" },
+  { value: "anim-pulse", label: "Pulse" },
+  { value: "anim-shine", label: "Shine" },
+  { value: "anim-bounce", label: "Bounce" },
+];
 
 export default function PropertiesPanel({ editor }) {
   const [selected, setSelected] = useState(null);
@@ -20,6 +29,7 @@ export default function PropertiesPanel({ editor }) {
   const [styles, setStyles] = useState({});
   const [content, setContent] = useState({ text: "", src: "", href: "", tag: "" });
   const [uploading, setUploading] = useState(false);
+  const [animClass, setAnimClass] = useState("");
 
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -95,6 +105,18 @@ export default function PropertiesPanel({ editor }) {
     });
   }, []);
 
+  const readAnimClass = useCallback((component) => {
+    if (!component) {
+      setAnimClass("");
+      return;
+    }
+    const classes = component.getClasses();
+    const found = ANIMATION_OPTIONS.find(
+      (o) => o.value && classes.includes(o.value)
+    );
+    setAnimClass(found ? found.value : "");
+  }, []);
+
   useEffect(() => {
     if (!editor) return;
 
@@ -102,11 +124,18 @@ export default function PropertiesPanel({ editor }) {
       setSelected(component);
       readStyles(component);
       readContent(component);
+      readAnimClass(component);
+      // Auto-switch to contenido tab for images
+      const tag = component.get("tagName")?.toLowerCase();
+      if (tag === "img") {
+        setTab("contenido");
+      }
     };
     const onDeselect = () => {
       setSelected(null);
       setStyles({});
       setContent({ text: "", src: "", href: "", tag: "" });
+      setAnimClass("");
     };
     const onStyleUpdate = () => {
       const sel = editor.getSelected();
@@ -122,7 +151,7 @@ export default function PropertiesPanel({ editor }) {
       editor.off("component:deselected", onDeselect);
       editor.off("component:styleUpdate", onStyleUpdate);
     };
-  }, [editor, readStyles, readContent]);
+  }, [editor, readStyles, readContent, readAnimClass]);
 
   const updateStyle = (prop, value) => {
     if (!selected) return;
@@ -136,10 +165,26 @@ export default function PropertiesPanel({ editor }) {
     setSelected(null);
   };
 
+  const handleAnimChange = (value) => {
+    if (!selected) return;
+    // Remove all animation classes first
+    ANIMATION_OPTIONS.forEach((o) => {
+      if (o.value) selected.removeClass(o.value);
+    });
+    // Add the new one
+    if (value) selected.addClass(value);
+    setAnimClass(value);
+  };
+
   const parseNum = (val, fallback = 0) => {
     const n = parseInt(val);
     return isNaN(n) ? fallback : n;
   };
+
+  const isPlaceholder =
+    content.src && content.src.includes("placehold.co");
+  const hasRealImage =
+    content.src && !content.src.includes("placehold.co");
 
   if (!selected) {
     return (
@@ -192,65 +237,116 @@ export default function PropertiesPanel({ editor }) {
 
             {content.tag === "img" && (
               <>
-                {/* Preview */}
-                {content.src && !content.src.includes("placehold.co") && (
-                  <div style={{ marginBottom: 12 }}>
-                    <label className="prop-label">Vista previa</label>
-                    <img
-                      src={
-                        content.src.startsWith("/")
-                          ? `${API_BASE_URL}${content.src}`
-                          : content.src
-                      }
-                      alt="Preview"
+                {/* State 1: Placeholder — large dropzone */}
+                {(isPlaceholder || !content.src) && (
+                  <div style={{ marginTop: 12 }}>
+                    <label className="prop-label">Imagen</label>
+                    <label
                       style={{
-                        width: "100%",
-                        borderRadius: 8,
-                        border: "1px solid var(--panel-border)",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        padding: "28px 16px",
+                        border: "2px dashed var(--panel-border)",
+                        borderRadius: 12,
+                        cursor: uploading ? "wait" : "pointer",
+                        transition: "all 0.2s",
+                        textAlign: "center",
+                        marginTop: 8,
                       }}
-                    />
+                    >
+                      <Upload
+                        size={28}
+                        style={{ color: "var(--panel-text-muted)" }}
+                      />
+                      <span
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 600,
+                          color: "var(--panel-text)",
+                        }}
+                      >
+                        {uploading
+                          ? "Subiendo..."
+                          : "Sube la imagen de tu producto"}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: "var(--panel-text-muted)",
+                        }}
+                      >
+                        JPG, PNG o WebP (max 10MB)
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: "none" }}
+                        onChange={handleImageUpload}
+                        disabled={uploading}
+                      />
+                    </label>
                   </div>
                 )}
 
-                {/* Upload button */}
-                <label className="prop-label" style={{ marginTop: 12 }}>
-                  Imagen
-                </label>
-                <div style={{ marginBottom: 12 }}>
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 8,
-                      padding: "14px 16px",
-                      background: "#4DBEA4",
-                      color: "#fff",
-                      borderRadius: 10,
-                      cursor: uploading ? "wait" : "pointer",
-                      fontWeight: 600,
-                      fontSize: 14,
-                      transition: "opacity 0.2s",
-                      opacity: uploading ? 0.6 : 1,
-                      width: "100%",
-                      boxSizing: "border-box",
-                    }}
-                  >
-                    {uploading
-                      ? "Subiendo..."
-                      : "Subir imagen desde tu computador"}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      style={{ display: "none" }}
-                      onChange={handleImageUpload}
-                      disabled={uploading}
-                    />
-                  </label>
-                </div>
+                {/* State 2: Real image — preview + change button */}
+                {hasRealImage && (
+                  <>
+                    <div style={{ marginTop: 12, marginBottom: 8 }}>
+                      <label className="prop-label">Vista previa</label>
+                      <img
+                        src={
+                          content.src.startsWith("/")
+                            ? `${API_BASE_URL}${content.src}`
+                            : content.src
+                        }
+                        alt="Preview"
+                        style={{
+                          width: "100%",
+                          borderRadius: 8,
+                          border: "1px solid var(--panel-border)",
+                          marginTop: 6,
+                        }}
+                      />
+                    </div>
+
+                    <label
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                        padding: "10px 16px",
+                        background: "var(--panel-bg-alt)",
+                        border: "1px solid var(--panel-border)",
+                        borderRadius: 8,
+                        cursor: uploading ? "wait" : "pointer",
+                        fontWeight: 600,
+                        fontSize: 13,
+                        color: "var(--panel-text)",
+                        transition: "all 0.15s",
+                        opacity: uploading ? 0.6 : 1,
+                      }}
+                    >
+                      <Upload size={14} />
+                      {uploading ? "Subiendo..." : "Cambiar imagen"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: "none" }}
+                        onChange={handleImageUpload}
+                        disabled={uploading}
+                      />
+                    </label>
+                  </>
+                )}
 
                 {/* Manual URL */}
-                <label className="prop-label">O pegar URL</label>
+                <label className="prop-label" style={{ marginTop: 12 }}>
+                  O pegar URL
+                </label>
                 <input
                   className="prop-input"
                   value={content.src}
@@ -277,6 +373,22 @@ export default function PropertiesPanel({ editor }) {
                   }}
                   placeholder="https://..."
                 />
+
+                {/* Animation selector for links/buttons */}
+                <label className="prop-label" style={{ marginTop: 16 }}>
+                  Animacion del boton
+                </label>
+                <div className="prop-toggle-group">
+                  {ANIMATION_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      className={`anim-badge ${animClass === opt.value ? "active" : ""}`}
+                      onClick={() => handleAnimChange(opt.value)}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
               </>
             )}
           </div>
