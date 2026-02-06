@@ -89,7 +89,8 @@ export default function Checkout() {
       if (!value.trim() || !slug || !product) return;
 
       try {
-        await fetch(`/api/store/${slug}/cart/capture`, {
+        const API_URL = import.meta.env.VITE_API_URL || "";
+        await fetch(`${API_URL}/api/store/${slug}/cart/capture`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -144,7 +145,8 @@ export default function Checkout() {
         total_price: totalPrice,
       };
 
-      const res = await fetch(`/api/store/${slug}/order`, {
+      const API_URL = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${API_URL}/api/store/${slug}/order`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData),

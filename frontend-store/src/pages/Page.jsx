@@ -13,7 +13,8 @@ export default function Page() {
   const { data: page, isLoading, error } = useQuery({
     queryKey: ['storePage', slug, pageSlug],
     queryFn: async () => {
-      const res = await fetch(`/api/store/${slug}/pages/${pageSlug}`);
+      const API_URL = import.meta.env.VITE_API_URL || "";
+      const res = await fetch(`${API_URL}/api/store/${slug}/pages/${pageSlug}`);
       if (!res.ok) throw new Error('Pagina no encontrada');
       return res.json();
     },
