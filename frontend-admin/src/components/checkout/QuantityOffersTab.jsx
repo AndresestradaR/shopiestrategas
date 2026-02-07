@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
@@ -20,6 +20,7 @@ import {
   Check,
 } from "lucide-react";
 import client from "../../api/client";
+import CheckoutPreview from "./CheckoutPreview";
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -203,107 +204,9 @@ function TierRow({ tier, index, onChange, onDelete }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Live Preview                                                       */
-/* ------------------------------------------------------------------ */
-function OfferPreview({ offer, tiers }) {
-  const [selectedIdx, setSelectedIdx] = useState(() => {
-    const pre = tiers.findIndex((t) => t.is_preselected);
-    return pre >= 0 ? pre : 0;
-  });
-
-  useEffect(() => {
-    const pre = tiers.findIndex((t) => t.is_preselected);
-    if (pre >= 0) setSelectedIdx(pre);
-  }, [tiers]);
-
-  const basePrice = 89900;
-
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-      <p className="mb-3 text-xs font-medium text-gray-500">Vista previa</p>
-      <div className="mx-auto w-[340px] rounded-2xl border border-gray-200 bg-white p-4 shadow-lg">
-        {/* Header */}
-        <div
-          className="mb-3 rounded-lg px-3 py-2 text-center text-sm font-bold"
-          style={{ backgroundColor: offer.header_bg_color, color: offer.header_text_color }}
-        >
-          {offer.header_text || "Selecciona la cantidad"}
-        </div>
-
-        {/* Tier cards */}
-        <div className="space-y-2">
-          {tiers.map((tier, idx) => {
-            const isSelected = idx === selectedIdx;
-            const discounted = tier.discount_type === "percentage"
-              ? basePrice * (1 - tier.discount_value / 100)
-              : Math.max(0, basePrice - tier.discount_value);
-            const total = discounted * tier.quantity;
-            const savings = (basePrice - discounted) * tier.quantity;
-
-            return (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => setSelectedIdx(idx)}
-                className="relative flex w-full items-center justify-between rounded-xl border-2 p-3 text-left transition-all"
-                style={{
-                  backgroundColor: offer.bg_color,
-                  borderColor: isSelected ? offer.selected_border_color : offer.border_color,
-                }}
-              >
-                {/* Label badge */}
-                {tier.label_text && (
-                  <span
-                    className="absolute -top-2.5 left-3 rounded-full px-2 py-0.5 text-[10px] font-bold"
-                    style={{ backgroundColor: tier.label_bg_color, color: tier.label_text_color }}
-                  >
-                    {tier.label_text}
-                  </span>
-                )}
-
-                <div className="flex items-center gap-2.5">
-                  {/* Radio */}
-                  <div
-                    className="flex h-4 w-4 items-center justify-center rounded-full border-2"
-                    style={{ borderColor: isSelected ? offer.selected_border_color : "#D1D5DB" }}
-                  >
-                    {isSelected && (
-                      <div className="h-2 w-2 rounded-full" style={{ backgroundColor: offer.selected_border_color }} />
-                    )}
-                  </div>
-                  <div>
-                    <span className="text-sm font-bold text-gray-800">{tier.title || `${tier.quantity} und`}</span>
-                    {offer.show_per_unit && (
-                      <span className="ml-1 text-xs text-gray-400">
-                        (${Math.round(discounted).toLocaleString("es-CO")} c/u)
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <div className="text-base font-bold" style={{ color: tier.price_color }}>
-                    ${Math.round(total).toLocaleString("es-CO")}
-                  </div>
-                  {offer.show_savings && savings > 0 && (
-                    <div className="text-[10px] font-semibold text-green-600">
-                      Ahorras ${Math.round(savings).toLocaleString("es-CO")}
-                    </div>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /*  Editor View                                                        */
 /* ------------------------------------------------------------------ */
-function OfferEditor({ offer, onBack, onSaved }) {
+function OfferEditor({ offer, onBack, onSaved, checkoutConfig }) {
   const queryClient = useQueryClient();
   const isNew = !offer;
 
@@ -642,10 +545,15 @@ function OfferEditor({ offer, onBack, onSaved }) {
           </div>
         </div>
 
-        {/* Right column: Preview */}
-        <div className="hidden xl:block w-[400px] shrink-0 sticky top-6 self-start">
-          <OfferPreview offer={form} tiers={tiers} />
-        </div>
+        {/* Right column: Full checkout preview with offer */}
+        {checkoutConfig && (
+          <div className="hidden xl:block shrink-0 sticky top-6 self-start">
+            <CheckoutPreview
+              config={checkoutConfig}
+              quantityOffer={{ ...form, tiers }}
+            />
+          </div>
+        )}
       </div>
 
       {showProductModal && (
@@ -751,7 +659,7 @@ function OfferListItem({ offer, onEdit, onToggle, onDuplicate, onDelete, onPrior
 /* ------------------------------------------------------------------ */
 /*  Main Tab Component                                                 */
 /* ------------------------------------------------------------------ */
-export default function QuantityOffersTab() {
+export default function QuantityOffersTab({ checkoutConfig }) {
   const queryClient = useQueryClient();
   const [view, setView] = useState("list"); // list | editor
   const [editingOffer, setEditingOffer] = useState(null);
@@ -833,6 +741,7 @@ export default function QuantityOffersTab() {
         offer={editingOffer}
         onBack={handleBack}
         onSaved={handleBack}
+        checkoutConfig={checkoutConfig}
       />
     );
   }

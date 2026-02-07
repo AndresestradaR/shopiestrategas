@@ -232,6 +232,7 @@ function PreviewBlock({ block, config }) {
 
     // Backward compat: don't render removed block types
     case 'offers':
+      return null;
     case 'shipping_info':
     case 'payment_method':
       return null;
@@ -275,7 +276,105 @@ function PreviewBlock({ block, config }) {
   }
 }
 
-export default function CheckoutPreview({ config }) {
+const PREVIEW_PRICE = 89900;
+
+function calcDiscountedPrice(basePrice, tier) {
+  const val = Number(tier.discount_value) || 0;
+  if (val <= 0) return basePrice;
+  if (tier.discount_type === 'percentage') {
+    return basePrice * (1 - val / 100);
+  }
+  if (tier.discount_type === 'fixed') {
+    return Math.max(0, basePrice - val);
+  }
+  return basePrice;
+}
+
+function QuantityOfferPreview({ offer, tiers }) {
+  const sortedTiers = [...tiers].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+  const preselectedIdx = sortedTiers.findIndex((t) => t.is_preselected);
+  const selectedIdx = preselectedIdx >= 0 ? preselectedIdx : 0;
+
+  return (
+    <div className="rounded-lg bg-white p-3 shadow-sm">
+      {/* Header */}
+      <div
+        className="mb-2 rounded-md px-2 py-1.5 text-center text-[11px] font-bold"
+        style={{ backgroundColor: offer.header_bg_color, color: offer.header_text_color }}
+      >
+        {offer.header_text || 'Selecciona la cantidad'}
+      </div>
+      {/* Tier cards */}
+      <div className="space-y-1.5">
+        {sortedTiers.map((tier, idx) => {
+          const isSelected = idx === selectedIdx;
+          const discounted = calcDiscountedPrice(PREVIEW_PRICE, tier);
+          const total = discounted * tier.quantity;
+          const savings = (PREVIEW_PRICE - discounted) * tier.quantity;
+
+          return (
+            <div
+              key={idx}
+              className="relative flex items-center justify-between rounded-lg border-2 p-2 text-left transition-all"
+              style={{
+                backgroundColor: offer.bg_color || '#FFFFFF',
+                borderColor: isSelected
+                  ? offer.selected_border_color || '#059669'
+                  : offer.border_color || '#E5E7EB',
+                boxShadow: isSelected ? `0 0 0 1px ${offer.selected_border_color || '#059669'}` : 'none',
+              }}
+            >
+              {/* Label badge */}
+              {tier.label_text && (
+                <span
+                  className="absolute -top-2 left-2 rounded-full px-1.5 py-0 text-[8px] font-bold"
+                  style={{ backgroundColor: tier.label_bg_color || '#F59E0B', color: tier.label_text_color || '#FFFFFF' }}
+                >
+                  {tier.label_text}
+                </span>
+              )}
+
+              <div className="flex items-center gap-2">
+                {/* Radio */}
+                <div
+                  className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border-2"
+                  style={{ borderColor: isSelected ? offer.selected_border_color || '#059669' : '#D1D5DB' }}
+                >
+                  {isSelected && (
+                    <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: offer.selected_border_color || '#059669' }} />
+                  )}
+                </div>
+                <div>
+                  <span className="text-[11px] font-bold text-gray-800">
+                    {tier.title || `${tier.quantity} ${tier.quantity === 1 ? 'unidad' : 'unidades'}`}
+                  </span>
+                  {offer.show_per_unit && (
+                    <div className="text-[9px] text-gray-400">
+                      ${Math.round(discounted).toLocaleString('es-CO')} c/u
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="text-right">
+                <div className="text-[12px] font-bold" style={{ color: tier.price_color || '#059669' }}>
+                  ${Math.round(total).toLocaleString('es-CO')}
+                </div>
+                {offer.show_savings && savings > 0 && (
+                  <div className="text-[8px] font-semibold text-green-600">
+                    Ahorras ${Math.round(savings).toLocaleString('es-CO')}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export default function CheckoutPreview({ config, quantityOffer = null }) {
   // Load Google Font dynamically for CTA
   useEffect(() => {
     const fontFamily = config.cta_font_family || 'Inter, sans-serif';
@@ -312,19 +411,41 @@ export default function CheckoutPreview({ config }) {
   // Group consecutive fields
   const groups = [];
   let fieldGroup = [];
+  let offersInserted = false;
   for (const block of blocks) {
     if (block.type === 'field') {
+      // Insert quantity offer preview before the first field group (after product/variants)
+      if (!offersInserted && quantityOffer && quantityOffer.tiers?.length > 0) {
+        groups.push({ type: '_quantity_offer' });
+        offersInserted = true;
+      }
       fieldGroup.push(block);
     } else {
       if (fieldGroup.length > 0) {
         groups.push({ type: '_field_group', fields: fieldGroup });
         fieldGroup = [];
       }
-      groups.push(block);
+      // Insert quantity offer preview after 'offers' block position if present
+      if (block.type === 'offers' && !offersInserted && quantityOffer && quantityOffer.tiers?.length > 0) {
+        groups.push({ type: '_quantity_offer' });
+        offersInserted = true;
+      } else {
+        groups.push(block);
+      }
     }
   }
   if (fieldGroup.length > 0) {
     groups.push({ type: '_field_group', fields: fieldGroup });
+  }
+  // If we still haven't inserted the offer (no 'offers' block and no fields yet), insert after variants/price_summary
+  if (!offersInserted && quantityOffer && quantityOffer.tiers?.length > 0) {
+    // Find the best insertion point: after product_card and variants, before price_summary
+    const insertIdx = groups.findIndex((g) => g.type === 'price_summary' || g.type === '_field_group');
+    if (insertIdx >= 0) {
+      groups.splice(insertIdx, 0, { type: '_quantity_offer' });
+    } else {
+      groups.push({ type: '_quantity_offer' });
+    }
   }
 
   return (
@@ -353,6 +474,15 @@ export default function CheckoutPreview({ config }) {
         <div className="h-[580px] overflow-y-auto px-3 py-3" style={{ scrollbarWidth: 'thin', fontFamily: config.form_font_family || 'Inter, sans-serif' }}>
           <div className="space-y-2.5">
             {groups.map((item, idx) => {
+              if (item.type === '_quantity_offer') {
+                return (
+                  <QuantityOfferPreview
+                    key="qty-offer"
+                    offer={quantityOffer}
+                    tiers={quantityOffer.tiers}
+                  />
+                );
+              }
               if (item.type === '_field_group') {
                 return (
                   <div

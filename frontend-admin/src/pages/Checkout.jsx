@@ -278,7 +278,7 @@ export default function Checkout() {
       )}
 
       {activeTab === "quantity" && (
-        <QuantityOffersTab />
+        <QuantityOffersTab checkoutConfig={cfg} />
       )}
 
       {activeTab === "upsells" && (
