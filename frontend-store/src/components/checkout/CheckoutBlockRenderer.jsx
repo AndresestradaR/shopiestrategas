@@ -118,6 +118,7 @@ export default function CheckoutBlockRenderer({
           formErrors={formErrors}
           onChange={onChange}
           onBlur={onBlur}
+          inputStyle={cfg.form_input_style}
         />
       );
 

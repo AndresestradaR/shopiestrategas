@@ -20,23 +20,19 @@ import BlockEditModal from './BlockEditModal';
 import AddBlockModal from './AddBlockModal';
 
 const BLOCK_LABELS = {
-  product_card: 'Imagen del producto',
-  variants: 'Selector de variantes',
-  price_summary: 'Resumen de precio',
   field: 'Campo',
   custom_text: 'Texto personalizado',
   image: 'Imagen / GIF',
   divider: 'Divisor',
   spacer: 'Espaciador',
-  trust_badge: 'Sellos de confianza',
-  submit_button: 'Boton de compra',
+  price_summary: 'Resumen de precio',
 };
 
-// Block types that cannot be deleted
-const SYSTEM_BLOCKS = ['product_card', 'variants', 'price_summary', 'submit_button'];
-
-// Block types that have been removed - filter them out of display
-const REMOVED_BLOCKS = ['offers', 'shipping_info', 'payment_method'];
+// Block types hidden from the sortable list (kept in JSON for store rendering)
+const HIDDEN_BLOCKS = [
+  'offers', 'shipping_info', 'payment_method',
+  'product_card', 'variants', 'trust_badge', 'submit_button',
+];
 
 function SortableBlock({ block, index, onToggle, onEdit, onDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
@@ -51,8 +47,6 @@ function SortableBlock({ block, index, onToggle, onEdit, onDelete }) {
   const label = block.type === 'field'
     ? `${BLOCK_LABELS.field}: ${block.label || block.field_key}`
     : BLOCK_LABELS[block.type] || block.type;
-
-  const isSystem = SYSTEM_BLOCKS.includes(block.type);
 
   return (
     <div
@@ -82,16 +76,14 @@ function SortableBlock({ block, index, onToggle, onEdit, onDelete }) {
       >
         <Pencil size={15} />
       </button>
-      {!isSystem && (
-        <button
-          type="button"
-          onClick={() => onDelete(index)}
-          className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500"
-          title="Eliminar"
-        >
-          <Trash2 size={15} />
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => onDelete(index)}
+        className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500"
+        title="Eliminar"
+      >
+        <Trash2 size={15} />
+      </button>
     </div>
   );
 }
@@ -100,14 +92,22 @@ export default function FormBlocksEditor({ blocks, onChange }) {
   const [editingIndex, setEditingIndex] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // Filter out removed block types for display, but keep them in data for backward compat
-  const filteredBlocks = (blocks || []).filter((b) => !REMOVED_BLOCKS.includes(b.type));
+  // Separate hidden blocks (kept in data) from visible ones
+  const allBlocks = blocks || [];
+  const hiddenBlocks = allBlocks.filter((b) => HIDDEN_BLOCKS.includes(b.type));
+  const filteredBlocks = allBlocks.filter((b) => !HIDDEN_BLOCKS.includes(b.type));
 
   // Ensure each block has a stable _id for dnd-kit
   const blocksWithIds = filteredBlocks.map((b, i) => ({
     ...b,
     _id: b._id || `block-${i}-${b.type}-${b.field_key || b.position}`,
   }));
+
+  // Merge visible blocks back with hidden ones when saving
+  const emitChange = (visibleBlocks) => {
+    const merged = [...hiddenBlocks, ...visibleBlocks].map((b, i) => ({ ...b, position: i }));
+    onChange(merged);
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -120,28 +120,25 @@ export default function FormBlocksEditor({ blocks, onChange }) {
 
     const oldIndex = blocksWithIds.findIndex((b) => b._id === active.id);
     const newIndex = blocksWithIds.findIndex((b) => b._id === over.id);
-    const reordered = arrayMove(blocksWithIds, oldIndex, newIndex).map((b, i) => ({
-      ...b,
-      position: i,
-    }));
-    onChange(reordered);
+    const reordered = arrayMove(blocksWithIds, oldIndex, newIndex);
+    emitChange(reordered);
   };
 
   const handleToggle = (index) => {
     const updated = [...blocksWithIds];
     updated[index] = { ...updated[index], enabled: !updated[index].enabled };
-    onChange(updated);
+    emitChange(updated);
   };
 
   const handleDelete = (index) => {
     const updated = blocksWithIds.filter((_, i) => i !== index);
-    onChange(updated.map((b, i) => ({ ...b, position: i })));
+    emitChange(updated);
   };
 
   const handleBlockUpdate = (index, updates) => {
     const updated = [...blocksWithIds];
     updated[index] = { ...updated[index], ...updates };
-    onChange(updated);
+    emitChange(updated);
     setEditingIndex(null);
   };
 
@@ -150,7 +147,7 @@ export default function FormBlocksEditor({ blocks, onChange }) {
       ...blocksWithIds,
       { ...newBlock, position: blocksWithIds.length, enabled: true, _id: `block-new-${Date.now()}` },
     ];
-    onChange(updated);
+    emitChange(updated);
     setShowAddModal(false);
   };
 

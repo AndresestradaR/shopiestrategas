@@ -1,3 +1,13 @@
+import { useEffect } from 'react';
+
+const GOOGLE_FONT_MAP = {
+  'Inter, sans-serif': 'Inter',
+  'Poppins, sans-serif': 'Poppins',
+  'Montserrat, sans-serif': 'Montserrat',
+  'Roboto, sans-serif': 'Roboto',
+  'Open Sans, sans-serif': 'Open+Sans',
+};
+
 const BLOCK_LABELS = {
   product_card: 'Imagen del producto',
   variants: 'Selector de variantes',
@@ -52,10 +62,52 @@ const ICON_MAP = {
       <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
     </svg>
   ),
+  hash: (
+    <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 8.25h15m-16.5 7.5h15m-1.8-13.5-3.9 19.5m-6.3-19.5-3.9 19.5" />
+    </svg>
+  ),
+  calendar: (
+    <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+    </svg>
+  ),
+  building: (
+    <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+    </svg>
+  ),
+  'id-card': (
+    <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 9.375a1.875 1.875 0 1 1-3.75 0 1.875 1.875 0 0 1 3.75 0Z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M11.794 15.711a6.721 6.721 0 0 1-3.17.789 6.721 6.721 0 0 1-3.168-.789 3.376 3.376 0 0 1 6.338 0Z" />
+    </svg>
+  ),
+  globe: (
+    <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5a17.919 17.919 0 0 1-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" />
+    </svg>
+  ),
 };
 
-function PreviewField({ block }) {
+function PreviewField({ block, inputStyle }) {
   const icon = ICON_MAP[block.icon] || ICON_MAP.note;
+  const showIcon = block.show_icon !== false;
+  const style = inputStyle || 'outline';
+
+  const fieldClasses = {
+    outline: 'rounded border border-gray-200 bg-white',
+    filled: 'rounded border-0 bg-gray-100',
+    underline: 'rounded-none border-0 border-b-2 border-gray-200 bg-transparent',
+  };
+
+  const iconClasses = {
+    outline: 'rounded-l bg-gray-100',
+    filled: 'rounded-l bg-gray-200',
+    underline: 'bg-transparent',
+  };
+
   return (
     <div>
       <label className="mb-1 block text-xs font-bold text-gray-600">
@@ -63,10 +115,12 @@ function PreviewField({ block }) {
         {block.required && <span className="ml-0.5 text-red-400">*</span>}
       </label>
       <div className="relative flex items-center">
-        <span className="pointer-events-none absolute left-0 flex h-8 w-8 items-center justify-center rounded-l bg-gray-100">
-          {icon}
-        </span>
-        <div className="h-8 w-full rounded border border-gray-200 bg-white pl-9 text-xs leading-8 text-gray-400">
+        {showIcon && (
+          <span className={`pointer-events-none absolute left-0 flex h-8 w-8 items-center justify-center ${iconClasses[style]}`}>
+            {icon}
+          </span>
+        )}
+        <div className={`h-8 w-full ${showIcon ? 'pl-9' : 'pl-3'} text-xs leading-8 text-gray-400 ${fieldClasses[style]}`}>
           {block.placeholder}
         </div>
       </div>
@@ -122,7 +176,7 @@ function PreviewBlock({ block, config }) {
       );
 
     case 'field':
-      return <PreviewField block={block} />;
+      return <PreviewField block={block} inputStyle={config.form_input_style} />;
 
     case 'custom_text':
       return (
@@ -221,6 +275,20 @@ function PreviewBlock({ block, config }) {
 }
 
 export default function CheckoutPreview({ config }) {
+  // Load Google Font dynamically
+  useEffect(() => {
+    const fontFamily = config.cta_font_family || 'Inter, sans-serif';
+    const googleName = GOOGLE_FONT_MAP[fontFamily];
+    if (!googleName) return;
+    const id = `gfont-${googleName}`;
+    if (document.getElementById(id)) return;
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${googleName}:wght@400;600;700&display=swap`;
+    document.head.appendChild(link);
+  }, [config.cta_font_family]);
+
   const blocks = [...(config.form_blocks || [])].filter((b) => b.enabled).sort((a, b) => a.position - b.position);
 
   const animation = config.cta_animation || 'none';

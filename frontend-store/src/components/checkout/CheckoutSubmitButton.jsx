@@ -1,4 +1,13 @@
+import { useEffect } from 'react';
 import './animations.css';
+
+const GOOGLE_FONT_MAP = {
+  'Inter, sans-serif': 'Inter',
+  'Poppins, sans-serif': 'Poppins',
+  'Montserrat, sans-serif': 'Montserrat',
+  'Roboto, sans-serif': 'Roboto',
+  'Open Sans, sans-serif': 'Open+Sans',
+};
 
 const SHADOW_MAP = {
   none: 'none',
@@ -14,6 +23,20 @@ export default function CheckoutSubmitButton({ cfg, totalPriceFormatted, submitt
 
   const animation = cfg.cta_animation || 'none';
   const animClass = animation !== 'none' ? `ck-anim-${animation}` : '';
+
+  // Load Google Font dynamically
+  useEffect(() => {
+    const fontFamily = cfg.cta_font_family || 'Inter, sans-serif';
+    const googleName = GOOGLE_FONT_MAP[fontFamily];
+    if (!googleName) return;
+    const id = `gfont-${googleName}`;
+    if (document.getElementById(id)) return;
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${googleName}:wght@400;600;700&display=swap`;
+    document.head.appendChild(link);
+  }, [cfg.cta_font_family]);
 
   return (
     <div className={animClass}>

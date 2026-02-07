@@ -1,5 +1,14 @@
+import { useEffect } from 'react';
 import ColorPicker from './ColorPicker';
 import SliderControl from './SliderControl';
+
+const GOOGLE_FONT_MAP = {
+  'Inter, sans-serif': 'Inter',
+  'Poppins, sans-serif': 'Poppins',
+  'Montserrat, sans-serif': 'Montserrat',
+  'Roboto, sans-serif': 'Roboto',
+  'Open Sans, sans-serif': 'Open+Sans',
+};
 
 const ANIMATIONS = [
   { value: 'none', label: 'Sin animacion' },
@@ -50,6 +59,20 @@ export default function CTAButtonEditor({ config, onChange }) {
 
   const animation = config.cta_animation || 'none';
   const animClass = animation !== 'none' ? `ck-anim-${animation}` : '';
+
+  // BUG 1: Load Google Font dynamically
+  useEffect(() => {
+    const fontFamily = config.cta_font_family || 'Inter, sans-serif';
+    const googleName = GOOGLE_FONT_MAP[fontFamily];
+    if (!googleName) return;
+    const id = `gfont-${googleName}`;
+    if (document.getElementById(id)) return;
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${googleName}:wght@400;600;700&display=swap`;
+    document.head.appendChild(link);
+  }, [config.cta_font_family]);
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
@@ -171,7 +194,7 @@ export default function CTAButtonEditor({ config, onChange }) {
         </div>
 
         {/* Live preview */}
-        <div className="mt-4 rounded-lg bg-gray-50 p-4">
+        <div className="mt-4 overflow-visible rounded-lg bg-gray-50 p-6">
           <p className="mb-2 text-xs font-medium text-gray-500">Vista previa</p>
           <div className={animClass}>
             <button
