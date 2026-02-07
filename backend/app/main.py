@@ -182,11 +182,13 @@ app.include_router(page_designs_router)
 app.include_router(store_pages_router)
 app.include_router(checkout_config_router)
 
-# Mount uploads directory for serving static files
-os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
-app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
-# Also mount under /api/uploads so images work through /api reverse proxies
-app.mount("/api/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads-api")
+# Mount uploads directory for local dev (when R2 is not configured, images are served from disk)
+from app.services.storage import is_r2_configured  # noqa: E402
+
+if not is_r2_configured():
+    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
+    app.mount("/api/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads-api")
 
 
 @app.get("/api/health")

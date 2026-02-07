@@ -7,6 +7,12 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     UPLOAD_DIR: str = "./uploads"
+    # Cloudflare R2 (S3-compatible) — set these in production
+    R2_ACCOUNT_ID: str | None = None
+    R2_ACCESS_KEY_ID: str | None = None
+    R2_SECRET_ACCESS_KEY: str | None = None
+    R2_BUCKET_NAME: str | None = None
+    R2_PUBLIC_URL: str | None = None  # e.g. https://pub-xxx.r2.dev
     CORS_ORIGINS: list[str] = [
         "http://localhost:5173",
         "http://localhost:5174",

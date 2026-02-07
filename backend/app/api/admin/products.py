@@ -1,4 +1,3 @@
-import os
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, status
@@ -19,6 +18,7 @@ from app.schemas.product import (
     ProductVariantResponse,
 )
 from app.services.image_upload import validate_and_save_image
+from app.services.storage import delete_by_url
 from app.utils.slugify import generate_unique_slug
 
 router = APIRouter(prefix="/api/admin/products", tags=["admin-products"])
@@ -179,9 +179,7 @@ async def delete_image(
     if not image:
         raise HTTPException(status_code=404, detail="Image not found")
 
-    filepath = os.path.join(".", image.image_url.lstrip("/"))
-    if os.path.exists(filepath):
-        os.remove(filepath)
+    delete_by_url(image.image_url)
 
     await db.delete(image)
 

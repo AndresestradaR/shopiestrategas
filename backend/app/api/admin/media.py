@@ -4,13 +4,22 @@ import uuid
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
 
 from app.api.deps import get_current_tenant
-from app.config import settings
 from app.models.tenant import Tenant
+from app.services.storage import upload_file
 
 router = APIRouter(prefix="/api/admin/media", tags=["admin-media"])
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"}
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
+CONTENT_TYPE_MAP = {
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+    ".svg": "image/svg+xml",
+}
 
 
 @router.post("/upload")
@@ -29,15 +38,10 @@ async def upload_media(
     if len(contents) > MAX_FILE_SIZE:
         raise HTTPException(400, "Archivo demasiado grande (maximo 10MB)")
 
-    media_dir = os.path.join(settings.UPLOAD_DIR, "media", str(current_tenant.id))
-    os.makedirs(media_dir, exist_ok=True)
-
     filename = f"{uuid.uuid4().hex}{ext}"
-    filepath = os.path.join(media_dir, filename)
+    key = f"media/{current_tenant.id}/{filename}"
+    content_type = CONTENT_TYPE_MAP.get(ext, "application/octet-stream")
 
-    with open(filepath, "wb") as f:
-        f.write(contents)
-
-    url = f"/uploads/media/{current_tenant.id}/{filename}"
+    url = upload_file(contents, key, content_type)
 
     return {"url": url, "filename": filename, "size": len(contents)}
