@@ -18,6 +18,7 @@ import TextsEditor from "../components/checkout/TextsEditor";
 import OptionsEditor from "../components/checkout/OptionsEditor";
 import CheckoutPreview from "../components/checkout/CheckoutPreview";
 import QuantityOffersTab from "../components/checkout/QuantityOffersTab";
+import UpsellsTab from "../components/checkout/UpsellsTab";
 
 /* ------------------------------------------------------------------ */
 /*  Default blocks (matches backend DEFAULT_BLOCKS)                    */
@@ -85,7 +86,7 @@ const DEFAULT_CONFIG = {
 const TABS = [
   { key: "design", label: "Diseno del Formulario", icon: Palette },
   { key: "quantity", label: "Ofertas de Cantidad", icon: ShoppingCart },
-  { key: "upsells", label: "Upsells/Downsells", icon: Zap, disabled: true },
+  { key: "upsells", label: "Upsells & Downsells", icon: Zap },
   { key: "abandoned", label: "Carrito Abandonado", icon: ShoppingBag, disabled: true },
 ];
 
@@ -282,11 +283,7 @@ export default function Checkout() {
       )}
 
       {activeTab === "upsells" && (
-        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16 text-gray-400">
-          <Zap size={40} className="mb-3" />
-          <p className="text-base font-medium">Upsells & Downsells</p>
-          <p className="text-sm">Proximamente</p>
-        </div>
+        <UpsellsTab />
       )}
 
       {activeTab === "abandoned" && (
