@@ -34,30 +34,36 @@ async def lifespan(app: FastAPI):
         await conn.execute(text("CREATE SCHEMA IF NOT EXISTS minishop"))
         await conn.run_sync(Base.metadata.create_all)
 
-        # Auto-migrate: add product_id to page_designs if missing
-        result = await conn.execute(text(
-            "SELECT column_name FROM information_schema.columns "
-            "WHERE table_schema = 'minishop' AND table_name = 'page_designs' AND column_name = 'product_id'"
-        ))
-        if not result.fetchone():
-            await conn.execute(text(
-                "ALTER TABLE minishop.page_designs "
-                "ADD COLUMN product_id UUID REFERENCES minishop.products(id) ON DELETE SET NULL"
-            ))
-            await conn.execute(text(
-                "ALTER TABLE minishop.page_designs "
-                "DROP CONSTRAINT IF EXISTS uq_pagedesign_tenant_type_slug"
-            ))
-            await conn.execute(text(
-                "DO $$ BEGIN "
-                "IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_pagedesign_tenant_slug') THEN "
-                "ALTER TABLE minishop.page_designs "
-                "ADD CONSTRAINT uq_pagedesign_tenant_slug UNIQUE (tenant_id, slug); "
-                "END IF; END $$"
-            ))
-
-        # Auto-migrate: add cta_subtitle_font_size and cta_font_family to checkout_configs
+    # Auto-migrations (each in its own connection, wrapped in try-except so server always starts)
+    try:
         async with engine.begin() as conn:
+            # add product_id to page_designs if missing
+            result = await conn.execute(text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_schema = 'minishop' AND table_name = 'page_designs' AND column_name = 'product_id'"
+            ))
+            if not result.fetchone():
+                await conn.execute(text(
+                    "ALTER TABLE minishop.page_designs "
+                    "ADD COLUMN product_id UUID REFERENCES minishop.products(id) ON DELETE SET NULL"
+                ))
+                await conn.execute(text(
+                    "ALTER TABLE minishop.page_designs "
+                    "DROP CONSTRAINT IF EXISTS uq_pagedesign_tenant_type_slug"
+                ))
+                await conn.execute(text(
+                    "DO $$ BEGIN "
+                    "IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'uq_pagedesign_tenant_slug') THEN "
+                    "ALTER TABLE minishop.page_designs "
+                    "ADD CONSTRAINT uq_pagedesign_tenant_slug UNIQUE (tenant_id, slug); "
+                    "END IF; END $$"
+                ))
+    except Exception as e:
+        print(f"[migrate] page_designs: {e}")
+
+    try:
+        async with engine.begin() as conn:
+            # add cta_subtitle_font_size and cta_font_family to checkout_configs
             result = await conn.execute(text(
                 "SELECT column_name FROM information_schema.columns "
                 "WHERE table_schema = 'minishop' AND table_name = 'checkout_configs' AND column_name = 'cta_subtitle_font_size'"
@@ -71,9 +77,12 @@ async def lifespan(app: FastAPI):
                     "ALTER TABLE minishop.checkout_configs "
                     "ADD COLUMN cta_font_family VARCHAR(100) DEFAULT 'Inter, sans-serif'"
                 ))
+    except Exception as e:
+        print(f"[migrate] cta_subtitle_font_size: {e}")
 
-        # Auto-migrate: add form_font_family to checkout_configs
+    try:
         async with engine.begin() as conn:
+            # add form_font_family to checkout_configs
             result = await conn.execute(text(
                 "SELECT column_name FROM information_schema.columns "
                 "WHERE table_schema = 'minishop' AND table_name = 'checkout_configs' AND column_name = 'form_font_family'"
@@ -83,17 +92,18 @@ async def lifespan(app: FastAPI):
                     "ALTER TABLE minishop.checkout_configs "
                     "ADD COLUMN form_font_family VARCHAR(100) DEFAULT 'Inter, sans-serif'"
                 ))
+    except Exception as e:
+        print(f"[migrate] form_font_family: {e}")
 
-        # Auto-migrate: drop old checkout_offers table if it exists (replaced by quantity_offers + quantity_offer_tiers)
+    try:
         async with engine.begin() as conn:
-            result = await conn.execute(text(
-                "SELECT table_name FROM information_schema.tables "
-                "WHERE table_schema = 'minishop' AND table_name = 'checkout_offers'"
-            ))
-            if result.fetchone():
-                await conn.execute(text("DROP TABLE IF EXISTS minishop.checkout_offers CASCADE"))
-            # create_all will handle quantity_offers + quantity_offer_tiers
+            # drop old checkout_offers table (replaced by quantity_offers + quantity_offer_tiers)
+            await conn.execute(text("DROP TABLE IF EXISTS minishop.checkout_offers CASCADE"))
+            # create_all ensures new tables exist
             await conn.run_sync(Base.metadata.create_all)
+    except Exception as e:
+        print(f"[migrate] checkout_offers->quantity_offers: {e}")
+
     yield
 
 
