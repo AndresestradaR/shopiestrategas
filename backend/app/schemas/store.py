@@ -196,3 +196,134 @@ class DashboardResponse(BaseModel):
     sales_today: float
     abandoned_carts_week: int
     conversion_rate: float
+
+
+# ── Upsell schemas ──────────────────────────────────────────────────
+
+class UpsellConfigUpdate(BaseModel):
+    upsell_type: str | None = None
+    max_upsells_per_order: int | None = None
+    is_active: bool | None = None
+
+
+class UpsellConfigResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    upsell_type: str
+    max_upsells_per_order: int
+    is_active: bool
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class UpsellProductInfo(BaseModel):
+    id: uuid.UUID
+    name: str
+    price: float
+    image_url: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class UpsellCreate(BaseModel):
+    name: str = "Nuevo upsell"
+    is_active: bool = True
+    priority: int = 0
+    trigger_type: str = "all"
+    trigger_product_ids: list[str] | None = None
+    upsell_product_id: str | None = None
+    discount_type: str = "none"
+    discount_value: float = 0
+    title: str = "Agregar {product_name} a tu pedido!"
+    title_color: str = "rgba(0,0,0,1)"
+    subtitle: str = ""
+    product_title_override: str | None = None
+    product_description_override: str | None = None
+    product_price_color: str = "rgba(0,0,0,1)"
+    show_quantity_selector: bool = False
+    hide_close_icon: bool = False
+    hide_variant_selector: bool = False
+    countdown_label: str = ""
+    countdown_hours: int = 0
+    countdown_minutes: int = 0
+    countdown_seconds: int = 0
+    add_button_text: str = "Agregar a tu pedido"
+    add_button_animation: str = "none"
+    add_button_icon: str | None = None
+    add_button_bg_color: str = "rgba(0,0,0,1)"
+    add_button_text_color: str = "rgba(255,255,255,1)"
+    add_button_font_size: int = 16
+    add_button_border_radius: int = 8
+    add_button_border_width: int = 0
+    add_button_border_color: str = "rgba(0,0,0,1)"
+    add_button_shadow: float = 0
+    decline_button_text: str = "No gracias, completar mi pedido"
+    decline_button_bg_color: str = "rgba(255,255,255,1)"
+    decline_button_text_color: str = "rgba(0,0,0,1)"
+    decline_button_font_size: int = 14
+    decline_button_border_radius: int = 8
+    decline_button_border_width: int = 1
+    decline_button_border_color: str = "rgba(0,0,0,1)"
+    decline_button_shadow: float = 0
+
+
+class UpsellResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    name: str
+    is_active: bool
+    priority: int
+    trigger_type: str
+    trigger_product_ids: list | None = None
+    upsell_product_id: uuid.UUID | None = None
+    discount_type: str
+    discount_value: float
+    title: str
+    title_color: str
+    subtitle: str
+    product_title_override: str | None = None
+    product_description_override: str | None = None
+    product_price_color: str
+    show_quantity_selector: bool
+    hide_close_icon: bool
+    hide_variant_selector: bool
+    countdown_label: str
+    countdown_hours: int
+    countdown_minutes: int
+    countdown_seconds: int
+    add_button_text: str
+    add_button_animation: str
+    add_button_icon: str | None = None
+    add_button_bg_color: str
+    add_button_text_color: str
+    add_button_font_size: int
+    add_button_border_radius: int
+    add_button_border_width: int
+    add_button_border_color: str
+    add_button_shadow: float
+    decline_button_text: str
+    decline_button_bg_color: str
+    decline_button_text_color: str
+    decline_button_font_size: int
+    decline_button_border_radius: int
+    decline_button_border_width: int
+    decline_button_border_color: str
+    decline_button_shadow: float
+    impressions: int
+    accepted_count: int
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    # Product info (populated via join)
+    upsell_product: UpsellProductInfo | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class StoreUpsellResponse(BaseModel):
+    """Upsell data returned to the public store."""
+    config: UpsellConfigResponse
+    upsells: list[UpsellResponse]
+
+    model_config = {"from_attributes": True}

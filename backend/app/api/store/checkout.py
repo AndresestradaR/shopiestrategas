@@ -14,6 +14,7 @@ from app.models.customer import Customer
 from app.models.order import Order, OrderItem
 from app.models.product import Product
 from app.models.tenant import Tenant
+from app.models.upsell import Upsell, UpsellConfig
 
 router = APIRouter(prefix="/api/store", tags=["store-checkout"])
 
@@ -236,3 +237,174 @@ async def capture_cart(slug: str, data: CartCapture, db: AsyncSession = Depends(
         db.add(cart)
 
     return {"status": "captured"}
+
+
+# ── Upsell endpoints ────────────────────────────────────────────────
+
+
+@router.get("/{slug}/upsells/{product_id}")
+async def get_upsells_for_product(
+    slug: str,
+    product_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    tenant = await _get_tenant_by_slug(slug, db)
+
+    # Get config
+    cfg_result = await db.execute(
+        select(UpsellConfig).where(UpsellConfig.tenant_id == tenant.id)
+    )
+    config = cfg_result.scalar_one_or_none()
+    if not config or not config.is_active:
+        return {"config": None, "upsells": []}
+
+    # Get active upsells
+    result = await db.execute(
+        select(Upsell)
+        .where(Upsell.tenant_id == tenant.id, Upsell.is_active == True)
+        .order_by(Upsell.priority.desc(), Upsell.created_at.desc())
+    )
+    all_upsells = result.scalars().all()
+
+    # Filter by trigger
+    pid_str = str(product_id)
+    matched = []
+    for u in all_upsells:
+        if not u.upsell_product_id:
+            continue
+        if u.trigger_type == "all":
+            matched.append(u)
+        elif u.trigger_type == "specific":
+            pids = [str(p) for p in (u.trigger_product_ids or [])]
+            if pid_str in pids:
+                matched.append(u)
+
+    # Limit to max
+    matched = matched[: config.max_upsells_per_order]
+
+    # Enrich with product info
+    enriched = []
+    for u in matched:
+        data = {c.name: getattr(u, c.name) for c in u.__table__.columns}
+        data["upsell_product"] = None
+        if u.upsell_product_id:
+            p_result = await db.execute(
+                select(Product)
+                .where(Product.id == u.upsell_product_id, Product.is_active == True)
+                .options(selectinload(Product.images), selectinload(Product.variants))
+            )
+            product = p_result.scalar_one_or_none()
+            if product:
+                img = product.images[0].image_url if product.images else None
+                variants = [
+                    {"id": v.id, "name": v.name, "price_override": float(v.price_override) if v.price_override else None}
+                    for v in (product.variants or [])
+                ]
+                data["upsell_product"] = {
+                    "id": product.id,
+                    "name": product.name,
+                    "price": float(product.price),
+                    "description": product.description,
+                    "image_url": img,
+                    "variants": variants,
+                }
+                enriched.append(data)
+
+    config_data = {c.name: getattr(config, c.name) for c in config.__table__.columns}
+    return {"config": config_data, "upsells": enriched}
+
+
+class UpsellItemCreate(BaseModel):
+    product_id: uuid.UUID
+    variant_id: uuid.UUID | None = None
+    quantity: int = 1
+    upsell_id: uuid.UUID
+
+
+@router.post("/{slug}/order/{order_id}/upsell-item")
+async def add_upsell_item(
+    slug: str,
+    order_id: uuid.UUID,
+    data: UpsellItemCreate,
+    db: AsyncSession = Depends(get_db),
+):
+    tenant = await _get_tenant_by_slug(slug, db)
+
+    # Get order
+    order_result = await db.execute(
+        select(Order).where(Order.id == order_id, Order.tenant_id == tenant.id)
+    )
+    order = order_result.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    # Get product
+    p_result = await db.execute(
+        select(Product)
+        .where(Product.id == data.product_id, Product.tenant_id == tenant.id, Product.is_active == True)
+        .options(selectinload(Product.variants))
+    )
+    product = p_result.scalar_one_or_none()
+    if not product:
+        raise HTTPException(status_code=400, detail="Product not found")
+
+    unit_price = float(product.price)
+    variant_name = None
+    if data.variant_id:
+        variant = next((v for v in product.variants if v.id == data.variant_id), None)
+        if variant and variant.price_override:
+            unit_price = float(variant.price_override)
+        if variant:
+            variant_name = variant.name
+
+    # Apply upsell discount
+    upsell_result = await db.execute(
+        select(Upsell).where(Upsell.id == data.upsell_id, Upsell.tenant_id == tenant.id)
+    )
+    upsell = upsell_result.scalar_one_or_none()
+    if upsell:
+        if upsell.discount_type == "percentage" and float(upsell.discount_value) > 0:
+            unit_price = unit_price * (1 - float(upsell.discount_value) / 100)
+        elif upsell.discount_type == "fixed" and float(upsell.discount_value) > 0:
+            unit_price = max(0, unit_price - float(upsell.discount_value))
+        upsell.accepted_count = (upsell.accepted_count or 0) + 1
+
+    total_price = unit_price * data.quantity
+
+    item = OrderItem(
+        order_id=order.id,
+        tenant_id=tenant.id,
+        product_id=product.id,
+        variant_id=data.variant_id,
+        product_name=product.name,
+        variant_name=variant_name,
+        quantity=data.quantity,
+        unit_price=unit_price,
+        total_price=total_price,
+        dropi_product_id=product.dropi_product_id,
+    )
+    db.add(item)
+
+    # Update order total
+    order.subtotal = float(order.subtotal) + total_price
+    order.total = float(order.total) + total_price
+
+    await db.flush()
+
+    return {"status": "ok", "item_total": total_price, "new_order_total": float(order.total)}
+
+
+@router.post("/{slug}/upsells/{upsell_id}/impression")
+async def register_upsell_impression(
+    slug: str,
+    upsell_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    tenant = await _get_tenant_by_slug(slug, db)
+    result = await db.execute(
+        select(Upsell).where(Upsell.id == upsell_id, Upsell.tenant_id == tenant.id)
+    )
+    upsell = result.scalar_one_or_none()
+    if upsell:
+        upsell.impressions = (upsell.impressions or 0) + 1
+    return {"status": "ok"}
