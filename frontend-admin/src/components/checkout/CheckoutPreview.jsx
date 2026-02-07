@@ -309,11 +309,12 @@ function calcDiscountedPrice(basePrice, tier) {
   return basePrice;
 }
 
-function QuantityOfferPreview({ offer, tiers, basePrice: basePriceProp }) {
+function QuantityOfferPreview({ offer, tiers, basePrice: basePriceProp, productImage }) {
   const price = basePriceProp || PREVIEW_PRICE;
   const sortedTiers = [...tiers].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
   const preselectedIdx = sortedTiers.findIndex((t) => t.is_preselected);
   const selectedIdx = preselectedIdx >= 0 ? preselectedIdx : 0;
+  const showImage = !offer.hide_product_image && !!productImage;
 
   return (
     <div className="rounded-lg bg-white p-3 shadow-sm">
@@ -330,12 +331,15 @@ function QuantityOfferPreview({ offer, tiers, basePrice: basePriceProp }) {
           const isSelected = idx === selectedIdx;
           const discounted = calcDiscountedPrice(price, tier);
           const total = discounted * tier.quantity;
-          const savings = (price - discounted) * tier.quantity;
+          const originalTotal = price * tier.quantity;
+          const savings = originalTotal - total;
+          const hasDiscount = savings > 0;
+          const tierImage = tier.image_url || (showImage ? productImage : null);
 
           return (
             <div
               key={idx}
-              className="relative flex items-center justify-between rounded-lg border-2 p-2 text-left transition-all"
+              className="relative flex items-center gap-2 rounded-lg border-2 p-2 text-left transition-all"
               style={{
                 backgroundColor: offer.bg_color || '#FFFFFF',
                 borderColor: isSelected
@@ -354,33 +358,44 @@ function QuantityOfferPreview({ offer, tiers, basePrice: basePriceProp }) {
                 </span>
               )}
 
-              <div className="flex items-center gap-2">
-                {/* Radio */}
-                <div
-                  className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border-2"
-                  style={{ borderColor: isSelected ? offer.selected_border_color || '#059669' : '#D1D5DB' }}
-                >
-                  {isSelected && (
-                    <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: offer.selected_border_color || '#059669' }} />
-                  )}
-                </div>
-                <div>
-                  <span className="text-[11px] font-bold text-gray-800">
-                    {tier.title || `${tier.quantity} ${tier.quantity === 1 ? 'unidad' : 'unidades'}`}
-                  </span>
-                  {offer.show_per_unit && (
-                    <div className="text-[9px] text-gray-400">
-                      ${Math.round(discounted).toLocaleString('es-CO')} c/u
-                    </div>
-                  )}
-                </div>
+              {/* Radio */}
+              <div
+                className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full border-2"
+                style={{ borderColor: isSelected ? offer.selected_border_color || '#059669' : '#D1D5DB' }}
+              >
+                {isSelected && (
+                  <div className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: offer.selected_border_color || '#059669' }} />
+                )}
               </div>
 
-              <div className="text-right">
+              {/* Product image */}
+              {tierImage && (
+                <img src={tierImage} alt="" className="h-10 w-10 shrink-0 rounded object-cover" />
+              )}
+
+              {/* Title + per unit */}
+              <div className="flex-1 min-w-0">
+                <span className="text-[11px] font-bold text-gray-800 leading-tight block">
+                  {tier.title || `${tier.quantity} ${tier.quantity === 1 ? 'unidad' : 'unidades'}`}
+                </span>
+                {offer.show_per_unit && (
+                  <div className="text-[9px] text-gray-400">
+                    ${Math.round(discounted).toLocaleString('es-CO')} c/u
+                  </div>
+                )}
+              </div>
+
+              {/* Pricing */}
+              <div className="text-right shrink-0">
+                {hasDiscount && !tier.hide_compare_price && (
+                  <div className="text-[9px] text-gray-400 line-through">
+                    ${Math.round(originalTotal).toLocaleString('es-CO')}
+                  </div>
+                )}
                 <div className="text-[12px] font-bold" style={{ color: tier.price_color || '#059669' }}>
                   ${Math.round(total).toLocaleString('es-CO')}
                 </div>
-                {offer.show_savings && savings > 0 && (
+                {offer.show_savings && hasDiscount && (
                   <div className="text-[8px] font-semibold text-green-600">
                     Ahorras ${Math.round(savings).toLocaleString('es-CO')}
                   </div>
@@ -462,6 +477,9 @@ export default function CheckoutPreview({ config, quantityOffer = null, productI
       // Skip old 'offers' block type
       if (block.type === 'offers') continue;
 
+      // Hide product_card when quantity offer is active (tiers show product image)
+      if (block.type === 'product_card' && hasOffer) continue;
+
       groups.push(block);
     }
   }
@@ -518,6 +536,7 @@ export default function CheckoutPreview({ config, quantityOffer = null, productI
                     offer={quantityOffer}
                     tiers={quantityOffer.tiers}
                     basePrice={basePrice}
+                    productImage={productImage}
                   />
                 );
               }
