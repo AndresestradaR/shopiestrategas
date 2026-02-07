@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from pydantic import BaseModel
 
@@ -170,8 +171,8 @@ class QuantityOfferResponse(BaseModel):
     impressions: int
     orders_count: int
     tiers: list[QuantityOfferTierResponse] = []
-    created_at: str | None = None
-    updated_at: str | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
     model_config = {"from_attributes": True}
 
