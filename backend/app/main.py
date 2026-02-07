@@ -71,6 +71,18 @@ async def lifespan(app: FastAPI):
                     "ALTER TABLE minishop.checkout_configs "
                     "ADD COLUMN cta_font_family VARCHAR(100) DEFAULT 'Inter, sans-serif'"
                 ))
+
+        # Auto-migrate: add form_font_family to checkout_configs
+        async with engine.begin() as conn:
+            result = await conn.execute(text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_schema = 'minishop' AND table_name = 'checkout_configs' AND column_name = 'form_font_family'"
+            ))
+            if not result.fetchone():
+                await conn.execute(text(
+                    "ALTER TABLE minishop.checkout_configs "
+                    "ADD COLUMN form_font_family VARCHAR(100) DEFAULT 'Inter, sans-serif'"
+                ))
     yield
 
 

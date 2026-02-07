@@ -30,6 +30,7 @@ class CheckoutConfigResponse(BaseModel):
     form_border_color: str
     form_shadow: str
     form_input_style: str
+    form_font_family: str
     form_blocks: list | None = None
     custom_fields: list | None = None
     form_title: str
@@ -73,6 +74,7 @@ class CheckoutConfigUpdate(BaseModel):
     form_border_color: str | None = None
     form_shadow: str | None = None
     form_input_style: str | None = None
+    form_font_family: str | None = None
     form_blocks: list | None = None
     custom_fields: list | None = None
     form_title: str | None = None

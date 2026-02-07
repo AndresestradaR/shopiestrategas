@@ -48,6 +48,28 @@ export default function Checkout() {
   // Merge fetched checkout config with defaults
   const cfg = mergeConfig(checkoutConfig);
 
+  // Load Google Font for form typography
+  useEffect(() => {
+    const GOOGLE_FONT_MAP = {
+      'Inter, sans-serif': 'Inter',
+      'Poppins, sans-serif': 'Poppins',
+      'Montserrat, sans-serif': 'Montserrat',
+      'Roboto, sans-serif': 'Roboto',
+      'Open Sans, sans-serif': 'Open+Sans',
+      'Lato, sans-serif': 'Lato',
+    };
+    const family = cfg.form_font_family || 'Inter, sans-serif';
+    const googleName = GOOGLE_FONT_MAP[family];
+    if (!googleName) return;
+    const linkId = `gfont-${googleName}`;
+    if (document.getElementById(linkId)) return;
+    const link = document.createElement('link');
+    link.id = linkId;
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${googleName}:wght@400;500;600;700&display=swap`;
+    document.head.appendChild(link);
+  }, [cfg.form_font_family]);
+
   useEffect(() => {
     if (product) {
       trackEvent('InitiateCheckout', {
@@ -302,7 +324,7 @@ export default function Checkout() {
 
       {/* Main content */}
       <main className="mx-auto max-w-lg px-4 py-5">
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5" style={{ fontFamily: cfg.form_font_family || 'Inter, sans-serif' }}>
           {renderGroups.map((item, idx) => {
             // Field group: wrap consecutive fields in a card
             if (item.type === 'field_group') {
@@ -316,6 +338,7 @@ export default function Checkout() {
                     borderWidth: `${cfg.form_border_width}px`,
                     borderColor: cfg.form_border_color,
                     borderStyle: cfg.form_border_width > 0 ? 'solid' : 'none',
+                    fontFamily: cfg.form_font_family || 'Inter, sans-serif',
                   }}
                 >
                   <h2 className="mb-4 text-lg font-bold" style={{ color: cfg.form_text_color }}>

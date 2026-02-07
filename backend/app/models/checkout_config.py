@@ -40,6 +40,7 @@ class CheckoutConfig(Base):
     form_border_color: Mapped[str] = mapped_column(String(9), default="#E5E7EB")
     form_shadow: Mapped[str] = mapped_column(String(50), default="sm")
     form_input_style: Mapped[str] = mapped_column(String(50), default="outline")
+    form_font_family: Mapped[str] = mapped_column(String(100), default="Inter, sans-serif")
 
     # Blocks and custom fields (JSON)
     form_blocks: Mapped[dict | None] = mapped_column(JSON)

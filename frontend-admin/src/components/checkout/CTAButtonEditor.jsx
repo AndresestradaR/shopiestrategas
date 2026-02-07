@@ -8,6 +8,7 @@ const GOOGLE_FONT_MAP = {
   'Montserrat, sans-serif': 'Montserrat',
   'Roboto, sans-serif': 'Roboto',
   'Open Sans, sans-serif': 'Open+Sans',
+  'Lato, sans-serif': 'Lato',
 };
 
 const ANIMATIONS = [
@@ -40,6 +41,7 @@ const FONTS = [
   { value: 'Montserrat, sans-serif', label: 'Montserrat' },
   { value: 'Roboto, sans-serif', label: 'Roboto' },
   { value: 'Open Sans, sans-serif', label: 'Open Sans' },
+  { value: 'Lato, sans-serif', label: 'Lato' },
   { value: 'system-ui, sans-serif', label: 'Sistema' },
 ];
 

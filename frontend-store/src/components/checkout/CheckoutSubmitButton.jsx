@@ -7,6 +7,7 @@ const GOOGLE_FONT_MAP = {
   'Montserrat, sans-serif': 'Montserrat',
   'Roboto, sans-serif': 'Roboto',
   'Open Sans, sans-serif': 'Open+Sans',
+  'Lato, sans-serif': 'Lato',
 };
 
 const SHADOW_MAP = {

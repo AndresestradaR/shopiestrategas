@@ -40,6 +40,7 @@ export const DEFAULT_CONFIG = {
   form_border_color: '#E5E7EB',
   form_shadow: 'sm',
   form_input_style: 'outline',
+  form_font_family: 'Inter, sans-serif',
   form_blocks: DEFAULT_BLOCKS,
   custom_fields: null,
   form_title: 'Datos de envio',

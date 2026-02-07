@@ -119,6 +119,7 @@ export default function CheckoutBlockRenderer({
           onChange={onChange}
           onBlur={onBlur}
           inputStyle={cfg.form_input_style}
+          fontFamily={cfg.form_font_family}
         />
       );
 

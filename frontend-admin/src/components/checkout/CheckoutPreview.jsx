@@ -6,6 +6,7 @@ const GOOGLE_FONT_MAP = {
   'Montserrat, sans-serif': 'Montserrat',
   'Roboto, sans-serif': 'Roboto',
   'Open Sans, sans-serif': 'Open+Sans',
+  'Lato, sans-serif': 'Lato',
 };
 
 const BLOCK_LABELS = {
@@ -275,7 +276,7 @@ function PreviewBlock({ block, config }) {
 }
 
 export default function CheckoutPreview({ config }) {
-  // Load Google Font dynamically
+  // Load Google Font dynamically for CTA
   useEffect(() => {
     const fontFamily = config.cta_font_family || 'Inter, sans-serif';
     const googleName = GOOGLE_FONT_MAP[fontFamily];
@@ -289,7 +290,21 @@ export default function CheckoutPreview({ config }) {
     document.head.appendChild(link);
   }, [config.cta_font_family]);
 
-  const blocks = [...(config.form_blocks || [])].filter((b) => b.enabled).sort((a, b) => a.position - b.position);
+  // Load Google Font dynamically for form
+  useEffect(() => {
+    const family = config.form_font_family || 'Inter, sans-serif';
+    const googleName = GOOGLE_FONT_MAP[family];
+    if (!googleName) return;
+    const linkId = `gfont-${googleName}`;
+    if (document.getElementById(linkId)) return;
+    const link = document.createElement('link');
+    link.id = linkId;
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${googleName}:wght@400;500;600;700&display=swap`;
+    document.head.appendChild(link);
+  }, [config.form_font_family]);
+
+  const blocks =[...(config.form_blocks || [])].filter((b) => b.enabled).sort((a, b) => a.position - b.position);
 
   const animation = config.cta_animation || 'none';
   const stickyAnimClass = animation !== 'none' ? `ck-anim-${animation}` : '';
@@ -335,7 +350,7 @@ export default function CheckoutPreview({ config }) {
           <span className="text-[10px] text-gray-400">Compra segura</span>
         </div>
         {/* Content */}
-        <div className="h-[580px] overflow-y-auto px-3 py-3" style={{ scrollbarWidth: 'thin' }}>
+        <div className="h-[580px] overflow-y-auto px-3 py-3" style={{ scrollbarWidth: 'thin', fontFamily: config.form_font_family || 'Inter, sans-serif' }}>
           <div className="space-y-2.5">
             {groups.map((item, idx) => {
               if (item.type === '_field_group') {
@@ -349,6 +364,7 @@ export default function CheckoutPreview({ config }) {
                       borderWidth: `${config.form_border_width}px`,
                       borderColor: config.form_border_color,
                       borderStyle: config.form_border_width > 0 ? 'solid' : 'none',
+                      fontFamily: config.form_font_family || 'Inter, sans-serif',
                     }}
                   >
                     <p className="mb-2 text-xs font-bold" style={{ color: config.form_text_color }}>

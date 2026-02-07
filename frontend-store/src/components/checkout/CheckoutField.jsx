@@ -72,7 +72,7 @@ const INPUT_STYLE_CLASSES = {
   },
 };
 
-export default function CheckoutField({ block, form, formErrors, onChange, onBlur, formStyle, inputStyle }) {
+export default function CheckoutField({ block, form, formErrors, onChange, onBlur, formStyle, inputStyle, fontFamily }) {
   const { field_key, label, placeholder, required, icon, input_type, show_icon } = block;
   const showIcon = show_icon !== false;
   const iconEl = ICONS[icon] || ICONS.note;
@@ -81,7 +81,7 @@ export default function CheckoutField({ block, form, formErrors, onChange, onBlu
 
   if (input_type === 'textarea') {
     return (
-      <div>
+      <div style={{ fontFamily: fontFamily || undefined }}>
         <label htmlFor={field_key} className="mb-1.5 block text-sm font-bold text-gray-700">
           {label}
           {required && <span className="ml-0.5 text-red-500">*</span>}
@@ -108,7 +108,7 @@ export default function CheckoutField({ block, form, formErrors, onChange, onBlu
   }
 
   return (
-    <div>
+    <div style={{ fontFamily: fontFamily || undefined }}>
       <label htmlFor={field_key} className="mb-1.5 block text-sm font-bold text-gray-700">
         {label}
         {required && <span className="ml-0.5 text-red-500">*</span>}
