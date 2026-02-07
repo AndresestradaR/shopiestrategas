@@ -29,7 +29,7 @@ async def list_products(
     is_active: bool | None = None,
     search: str | None = None,
     page: int = Query(1, ge=1),
-    per_page: int = Query(20, ge=1, le=100),
+    per_page: int = Query(20, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
     tenant: Tenant = Depends(require_active_tenant),
 ):

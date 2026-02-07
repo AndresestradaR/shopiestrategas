@@ -52,9 +52,10 @@ class QuantityOfferTier(Base):
     discount_type: Mapped[str] = mapped_column(String(20), default="percentage")
     discount_value: Mapped[float] = mapped_column(Numeric(12, 2), default=0)
     label_text: Mapped[str | None] = mapped_column(String(100))
-    label_bg_color: Mapped[str] = mapped_column(String(9), default="#F59E0B")
-    label_text_color: Mapped[str] = mapped_column(String(9), default="#FFFFFF")
-    price_color: Mapped[str] = mapped_column(String(9), default="#059669")
+    label_bg_color: Mapped[str] = mapped_column(String(50), default="#F59E0B")
+    label_text_color: Mapped[str] = mapped_column(String(50), default="#FFFFFF")
+    price_color: Mapped[str] = mapped_column(String(50), default="#059669")
+    hide_compare_price: Mapped[bool] = mapped_column(Boolean, default=False)
     image_url: Mapped[str | None] = mapped_column(String(500))
 
     offer = relationship("QuantityOffer", back_populates="tiers")

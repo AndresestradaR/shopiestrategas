@@ -14,10 +14,9 @@ import {
   ToggleLeft,
   ToggleRight,
   ArrowLeft,
-  Eye,
   Package,
   ShoppingCart,
-  Check,
+  Image,
 } from "lucide-react";
 import client from "../../api/client";
 import CheckoutPreview from "./CheckoutPreview";
@@ -37,13 +36,112 @@ const PALETTES = [
 ];
 
 const DEFAULT_TIERS = [
-  { title: "1 unidad", quantity: 1, position: 0, is_preselected: false, discount_type: "percentage", discount_value: 0, label_text: null, label_bg_color: "#F59E0B", label_text_color: "#FFFFFF", price_color: "#059669", image_url: null },
-  { title: "2 unidades", quantity: 2, position: 1, is_preselected: true, discount_type: "percentage", discount_value: 10, label_text: "Mas popular", label_bg_color: "#F59E0B", label_text_color: "#FFFFFF", price_color: "#059669", image_url: null },
-  { title: "3 unidades", quantity: 3, position: 2, is_preselected: false, discount_type: "percentage", discount_value: 20, label_text: "Mejor oferta", label_bg_color: "#059669", label_text_color: "#FFFFFF", price_color: "#059669", image_url: null },
+  { title: "1 unidad", quantity: 1, position: 0, is_preselected: false, discount_type: "percentage", discount_value: 0, label_text: null, label_bg_color: "#F59E0B", label_text_color: "#FFFFFF", price_color: "#059669", hide_compare_price: false, image_url: null },
+  { title: "2 unidades", quantity: 2, position: 1, is_preselected: true, discount_type: "percentage", discount_value: 10, label_text: "Mas popular", label_bg_color: "#F59E0B", label_text_color: "#FFFFFF", price_color: "#059669", hide_compare_price: false, image_url: null },
+  { title: "3 unidades", quantity: 3, position: 2, is_preselected: false, discount_type: "percentage", discount_value: 20, label_text: "Mejor oferta", label_bg_color: "#059669", label_text_color: "#FFFFFF", price_color: "#059669", hide_compare_price: false, image_url: null },
 ];
 
 /* ------------------------------------------------------------------ */
-/*  Product Selector Modal                                             */
+/*  RGBA Color Helpers                                                 */
+/* ------------------------------------------------------------------ */
+function hexToRgba(hex, alpha = 1) {
+  const m = hex.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i);
+  if (!m) return `rgba(0,0,0,${alpha})`;
+  return `rgba(${parseInt(m[1], 16)},${parseInt(m[2], 16)},${parseInt(m[3], 16)},${alpha})`;
+}
+
+function rgbaToHexAndAlpha(rgba) {
+  if (!rgba) return { hex: "#000000", alpha: 1 };
+  // Handle hex input
+  if (rgba.startsWith("#")) return { hex: rgba.slice(0, 7), alpha: 1 };
+  const m = rgba.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+))?\s*\)/);
+  if (!m) return { hex: "#000000", alpha: 1 };
+  const r = parseInt(m[1]).toString(16).padStart(2, "0");
+  const g = parseInt(m[2]).toString(16).padStart(2, "0");
+  const b = parseInt(m[3]).toString(16).padStart(2, "0");
+  return { hex: `#${r}${g}${b}`, alpha: m[4] !== undefined ? parseFloat(m[4]) : 1 };
+}
+
+/* ------------------------------------------------------------------ */
+/*  RGBA Color Input                                                   */
+/* ------------------------------------------------------------------ */
+function RgbaColorInput({ label, value, onChange }) {
+  const { hex, alpha } = rgbaToHexAndAlpha(value || "#000000");
+
+  const handleHexChange = (newHex) => {
+    onChange(hexToRgba(newHex, alpha));
+  };
+
+  const handleAlphaChange = (newAlpha) => {
+    onChange(hexToRgba(hex, newAlpha));
+  };
+
+  const handleTextChange = (text) => {
+    onChange(text);
+  };
+
+  return (
+    <div>
+      <label className="mb-1 block text-xs font-medium text-gray-600">{label}</label>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={hex}
+          onChange={(e) => handleHexChange(e.target.value)}
+          className="h-8 w-8 shrink-0 cursor-pointer rounded border border-gray-200"
+        />
+        <input
+          type="text"
+          value={value || ""}
+          onChange={(e) => handleTextChange(e.target.value)}
+          className="w-full rounded border border-gray-200 px-2 py-1 text-xs font-mono outline-none focus:border-[#4DBEA4]"
+          placeholder="rgba(0,0,0,1) o #hex"
+        />
+      </div>
+      <div className="mt-1 flex items-center gap-2">
+        <span className="text-[10px] text-gray-400">Opacidad</span>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.01}
+          value={alpha}
+          onChange={(e) => handleAlphaChange(parseFloat(e.target.value))}
+          className="h-1 flex-1 cursor-pointer accent-[#4DBEA4]"
+        />
+        <span className="text-[10px] font-mono text-gray-500 w-8 text-right">{Math.round(alpha * 100)}%</span>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Simple Color Input (hex only, for offer-level colors)              */
+/* ------------------------------------------------------------------ */
+function ColorInput({ label, value, onChange }) {
+  return (
+    <div>
+      <label className="mb-1 block text-xs font-medium text-gray-600">{label}</label>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-8 w-8 shrink-0 cursor-pointer rounded border border-gray-200"
+        />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full rounded border border-gray-200 px-2 py-1 text-xs font-mono outline-none focus:border-[#4DBEA4]"
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Product Selector Modal (with images)                               */
 /* ------------------------------------------------------------------ */
 function ProductSelectorModal({ selectedIds, onConfirm, onClose }) {
   const [search, setSearch] = useState("");
@@ -69,6 +167,12 @@ function ProductSelectorModal({ selectedIds, onConfirm, onClose }) {
     setSelected(next);
   };
 
+  const getProductImage = (product) => {
+    if (!product.images || product.images.length === 0) return null;
+    const primary = product.images.find((img) => img.is_primary);
+    return (primary || product.images[0])?.image_url || null;
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
@@ -89,24 +193,52 @@ function ProductSelectorModal({ selectedIds, onConfirm, onClose }) {
               className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
             />
           </div>
-          <div className="max-h-64 overflow-y-auto space-y-1">
+          <div className="max-h-80 overflow-y-auto space-y-1">
             {isLoading ? (
               <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-gray-400" /></div>
             ) : filtered.length === 0 ? (
               <p className="py-4 text-center text-sm text-gray-400">No se encontraron productos</p>
             ) : (
-              filtered.map((p) => (
-                <label key={p.id} className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-50">
-                  <input
-                    type="checkbox"
-                    checked={selected.has(p.id)}
-                    onChange={() => toggle(p.id)}
-                    className="h-4 w-4 rounded border-gray-300 text-[#4DBEA4] focus:ring-[#4DBEA4]"
-                  />
-                  <span className="text-sm text-gray-800">{p.name}</span>
-                  <span className="ml-auto text-xs text-gray-400">${Number(p.price).toLocaleString("es-CO")}</span>
-                </label>
-              ))
+              filtered.map((p) => {
+                const imgUrl = getProductImage(p);
+                return (
+                  <label
+                    key={p.id}
+                    className={`flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${
+                      selected.has(p.id) ? "bg-[#4DBEA4]/5 border border-[#4DBEA4]/20" : "hover:bg-gray-50 border border-transparent"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selected.has(p.id)}
+                      onChange={() => toggle(p.id)}
+                      className="h-4 w-4 rounded border-gray-300 text-[#4DBEA4] focus:ring-[#4DBEA4]"
+                    />
+                    {imgUrl ? (
+                      <img
+                        src={imgUrl}
+                        alt={p.name}
+                        className="h-10 w-10 rounded-lg object-cover border border-gray-100"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gray-100 border border-gray-200">
+                        <Package size={16} className="text-gray-300" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">{p.name}</p>
+                      <p className="text-xs text-gray-400">${Number(p.price).toLocaleString("es-CO")}</p>
+                    </div>
+                    {selected.has(p.id) && (
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#4DBEA4] text-white">
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                      </div>
+                    )}
+                  </label>
+                );
+              })
             )}
           </div>
         </div>
@@ -130,76 +262,142 @@ function ProductSelectorModal({ selectedIds, onConfirm, onClose }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Tier Row (inline edit)                                             */
+/*  Tier Row with expandable editor                                    */
 /* ------------------------------------------------------------------ */
-function TierRow({ tier, index, onChange, onDelete }) {
+function TierRow({ tier, index, onChange, onDelete, expanded, onToggleExpand }) {
   const update = (field, value) => {
     onChange(index, { ...tier, [field]: value });
   };
 
   return (
-    <tr className="border-b border-gray-100 hover:bg-gray-50/50">
-      <td className="px-3 py-2">
-        <input
-          type="text"
-          value={tier.title || ""}
-          onChange={(e) => update("title", e.target.value)}
-          className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
-          placeholder="Ej: 2 unidades"
-        />
-      </td>
-      <td className="px-3 py-2">
-        <input
-          type="number"
-          min={1}
-          value={tier.quantity}
-          onChange={(e) => update("quantity", parseInt(e.target.value) || 1)}
-          className="w-20 rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
-        />
-      </td>
-      <td className="px-3 py-2">
-        <select
-          value={tier.discount_type}
-          onChange={(e) => update("discount_type", e.target.value)}
-          className="rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
-        >
-          <option value="percentage">%</option>
-          <option value="fixed">$ fijo</option>
-        </select>
-      </td>
-      <td className="px-3 py-2">
-        <input
-          type="number"
-          min={0}
-          step={tier.discount_type === "percentage" ? 1 : 100}
-          value={tier.discount_value}
-          onChange={(e) => update("discount_value", parseFloat(e.target.value) || 0)}
-          className="w-24 rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
-        />
-      </td>
-      <td className="px-3 py-2">
-        <input
-          type="text"
-          value={tier.label_text || ""}
-          onChange={(e) => update("label_text", e.target.value || null)}
-          className="w-28 rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
-          placeholder="Etiqueta"
-        />
-      </td>
-      <td className="px-3 py-2 text-center">
-        <input
-          type="checkbox"
-          checked={tier.is_preselected}
-          onChange={(e) => update("is_preselected", e.target.checked)}
-          className="h-4 w-4 rounded border-gray-300 text-[#4DBEA4] focus:ring-[#4DBEA4]"
-        />
-      </td>
-      <td className="px-3 py-2">
-        <button onClick={() => onDelete(index)} className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500">
-          <Trash2 size={14} />
-        </button>
-      </td>
-    </tr>
+    <>
+      <tr className="border-b border-gray-100 hover:bg-gray-50/50">
+        <td className="px-3 py-2">
+          <input
+            type="text"
+            value={tier.title || ""}
+            onChange={(e) => update("title", e.target.value)}
+            className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
+            placeholder="Ej: 2 unidades"
+          />
+        </td>
+        <td className="px-3 py-2">
+          <input
+            type="number"
+            min={1}
+            value={tier.quantity}
+            onChange={(e) => update("quantity", parseInt(e.target.value) || 1)}
+            className="w-20 rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
+          />
+        </td>
+        <td className="px-3 py-2">
+          <select
+            value={tier.discount_type}
+            onChange={(e) => update("discount_type", e.target.value)}
+            className="rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
+          >
+            <option value="percentage">%</option>
+            <option value="fixed">$ fijo</option>
+          </select>
+        </td>
+        <td className="px-3 py-2">
+          <input
+            type="number"
+            min={0}
+            step={tier.discount_type === "percentage" ? 1 : 100}
+            value={tier.discount_value}
+            onChange={(e) => update("discount_value", parseFloat(e.target.value) || 0)}
+            className="w-24 rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
+          />
+        </td>
+        <td className="px-3 py-2">
+          <input
+            type="text"
+            value={tier.label_text || ""}
+            onChange={(e) => update("label_text", e.target.value || null)}
+            className="w-28 rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
+            placeholder="Etiqueta"
+          />
+        </td>
+        <td className="px-3 py-2 text-center">
+          <input
+            type="checkbox"
+            checked={tier.is_preselected}
+            onChange={(e) => update("is_preselected", e.target.checked)}
+            className="h-4 w-4 rounded border-gray-300 text-[#4DBEA4] focus:ring-[#4DBEA4]"
+          />
+        </td>
+        <td className="px-3 py-2">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => onToggleExpand(index)}
+              className={`rounded p-1 transition-colors ${expanded ? "bg-[#4DBEA4]/10 text-[#4DBEA4]" : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"}`}
+              title="Opciones avanzadas"
+            >
+              {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            </button>
+            <button onClick={() => onDelete(index)} className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500">
+              <Trash2 size={14} />
+            </button>
+          </div>
+        </td>
+      </tr>
+      {expanded && (
+        <tr className="border-b border-gray-100">
+          <td colSpan={7} className="bg-gray-50/70 px-4 py-4">
+            <div className="space-y-4">
+              {/* Row 1: hide_compare_price */}
+              <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3">
+                <div>
+                  <span className="text-sm font-medium text-gray-700">Ocultar precio tachado</span>
+                  <p className="text-xs text-gray-400">No mostrar el precio original comparativo</p>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={tier.hide_compare_price || false}
+                  onChange={(e) => update("hide_compare_price", e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-[#4DBEA4] focus:ring-[#4DBEA4]"
+                />
+              </div>
+
+              {/* Row 2: Colors */}
+              <div className="grid grid-cols-3 gap-3">
+                <RgbaColorInput
+                  label="Color del precio"
+                  value={tier.price_color}
+                  onChange={(v) => update("price_color", v)}
+                />
+                <RgbaColorInput
+                  label="Fondo etiqueta"
+                  value={tier.label_bg_color}
+                  onChange={(v) => update("label_bg_color", v)}
+                />
+                <RgbaColorInput
+                  label="Texto etiqueta"
+                  value={tier.label_text_color}
+                  onChange={(v) => update("label_text_color", v)}
+                />
+              </div>
+
+              {/* Row 3: Image URL */}
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-600">URL de imagen del tier</label>
+                <div className="flex items-center gap-2">
+                  <Image size={16} className="shrink-0 text-gray-400" />
+                  <input
+                    type="text"
+                    value={tier.image_url || ""}
+                    onChange={(e) => update("image_url", e.target.value || null)}
+                    placeholder="https://... (opcional)"
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
+                  />
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+      )}
+    </>
   );
 }
 
@@ -258,6 +456,7 @@ function OfferEditor({ offer, onBack, onSaved, checkoutConfig }) {
         label_bg_color: t.label_bg_color,
         label_text_color: t.label_text_color,
         price_color: t.price_color,
+        hide_compare_price: t.hide_compare_price || false,
         image_url: t.image_url,
       }));
     }
@@ -265,6 +464,7 @@ function OfferEditor({ offer, onBack, onSaved, checkoutConfig }) {
   });
 
   const [showProductModal, setShowProductModal] = useState(false);
+  const [expandedTier, setExpandedTier] = useState(null);
 
   const updateForm = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
 
@@ -274,6 +474,12 @@ function OfferEditor({ offer, onBack, onSaved, checkoutConfig }) {
 
   const handleTierDelete = (idx) => {
     setTiers((prev) => prev.filter((_, i) => i !== idx));
+    if (expandedTier === idx) setExpandedTier(null);
+    else if (expandedTier > idx) setExpandedTier(expandedTier - 1);
+  };
+
+  const toggleExpandTier = (idx) => {
+    setExpandedTier(expandedTier === idx ? null : idx);
   };
 
   const addTier = () => {
@@ -291,6 +497,7 @@ function OfferEditor({ offer, onBack, onSaved, checkoutConfig }) {
         label_bg_color: "#F59E0B",
         label_text_color: "#FFFFFF",
         price_color: "#059669",
+        hide_compare_price: false,
         image_url: null,
       },
     ]);
@@ -359,6 +566,14 @@ function OfferEditor({ offer, onBack, onSaved, checkoutConfig }) {
 
   const selectedProducts = (allProducts || []).filter((p) => form.product_ids.includes(p.id));
 
+  // Get first product data for preview
+  const firstProduct = selectedProducts.length > 0 ? selectedProducts[0] : null;
+  const productImage = firstProduct?.images?.length > 0
+    ? (firstProduct.images.find((img) => img.is_primary) || firstProduct.images[0])?.image_url
+    : null;
+  const productName = firstProduct?.name || null;
+  const productPrice = firstProduct ? Number(firstProduct.price) : null;
+
   return (
     <div>
       {/* Top bar */}
@@ -411,19 +626,33 @@ function OfferEditor({ offer, onBack, onSaved, checkoutConfig }) {
                   Productos asignados ({form.product_ids.length})
                 </label>
                 {selectedProducts.length > 0 && (
-                  <div className="mb-2 flex flex-wrap gap-2">
-                    {selectedProducts.map((p) => (
-                      <span key={p.id} className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
-                        <Package size={12} />
-                        {p.name}
-                        <button
-                          onClick={() => updateForm("product_ids", form.product_ids.filter((id) => id !== p.id))}
-                          className="ml-0.5 text-gray-400 hover:text-red-500"
-                        >
-                          <X size={12} />
-                        </button>
-                      </span>
-                    ))}
+                  <div className="mb-2 space-y-1.5">
+                    {selectedProducts.map((p) => {
+                      const imgUrl = p.images?.length > 0
+                        ? (p.images.find((img) => img.is_primary) || p.images[0])?.image_url
+                        : null;
+                      return (
+                        <div key={p.id} className="flex items-center gap-2.5 rounded-lg bg-gray-50 px-3 py-2">
+                          {imgUrl ? (
+                            <img src={imgUrl} alt={p.name} className="h-8 w-8 rounded object-cover border border-gray-200" />
+                          ) : (
+                            <div className="flex h-8 w-8 items-center justify-center rounded bg-gray-200">
+                              <Package size={14} className="text-gray-400" />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-700 truncate">{p.name}</p>
+                            <p className="text-xs text-gray-400">${Number(p.price).toLocaleString("es-CO")}</p>
+                          </div>
+                          <button
+                            onClick={() => updateForm("product_ids", form.product_ids.filter((id) => id !== p.id))}
+                            className="rounded p-1 text-gray-400 hover:text-red-500"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
                 <button
@@ -474,6 +703,8 @@ function OfferEditor({ offer, onBack, onSaved, checkoutConfig }) {
                         index={idx}
                         onChange={handleTierChange}
                         onDelete={handleTierDelete}
+                        expanded={expandedTier === idx}
+                        onToggleExpand={toggleExpandTier}
                       />
                     ))}
                   </tbody>
@@ -551,6 +782,9 @@ function OfferEditor({ offer, onBack, onSaved, checkoutConfig }) {
             <CheckoutPreview
               config={checkoutConfig}
               quantityOffer={{ ...form, tiers }}
+              productImage={productImage}
+              productName={productName}
+              productPrice={productPrice}
             />
           </div>
         )}
@@ -566,31 +800,6 @@ function OfferEditor({ offer, onBack, onSaved, checkoutConfig }) {
           onClose={() => setShowProductModal(false)}
         />
       )}
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/*  Color input (simple inline)                                        */
-/* ------------------------------------------------------------------ */
-function ColorInput({ label, value, onChange }) {
-  return (
-    <div>
-      <label className="mb-1 block text-xs font-medium text-gray-600">{label}</label>
-      <div className="flex items-center gap-2">
-        <input
-          type="color"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-8 w-8 cursor-pointer rounded border border-gray-200"
-        />
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded border border-gray-200 px-2 py-1 text-xs font-mono outline-none focus:border-[#4DBEA4]"
-        />
-      </div>
     </div>
   );
 }

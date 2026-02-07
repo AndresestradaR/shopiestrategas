@@ -135,11 +135,26 @@ function PreviewBlock({ block, config }) {
       if (!config.show_product_image) return null;
       return (
         <div className="flex gap-3 rounded-lg bg-white p-3 shadow-sm">
-          <div className="h-14 w-14 flex-shrink-0 rounded-lg bg-gray-200" />
+          {config._productImage ? (
+            <img src={config._productImage} alt="" className="h-14 w-14 flex-shrink-0 rounded-lg object-cover" />
+          ) : (
+            <div className="h-14 w-14 flex-shrink-0 rounded-lg bg-gray-200" />
+          )}
           <div className="flex-1">
-            <div className="h-3 w-3/4 rounded bg-gray-200" />
-            <div className="mt-1.5 h-2 w-1/2 rounded bg-gray-100" />
-            <div className="mt-1.5 h-3 w-1/3 rounded bg-emerald-100" />
+            {config._productName ? (
+              <>
+                <p className="text-xs font-bold text-gray-800 leading-tight">{config._productName}</p>
+                <p className="mt-1 text-[11px] font-bold text-emerald-600">
+                  ${Math.round(config._productPrice || PREVIEW_PRICE).toLocaleString('es-CO')}
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="h-3 w-3/4 rounded bg-gray-200" />
+                <div className="mt-1.5 h-2 w-1/2 rounded bg-gray-100" />
+                <div className="mt-1.5 h-3 w-1/3 rounded bg-emerald-100" />
+              </>
+            )}
           </div>
         </div>
       );
@@ -158,23 +173,26 @@ function PreviewBlock({ block, config }) {
         </div>
       );
 
-    case 'price_summary':
+    case 'price_summary': {
       if (!config.show_price_summary) return null;
+      const displayPrice = config._productPrice ?? PREVIEW_PRICE;
+      const formatted = `$${Math.round(displayPrice).toLocaleString('es-CO')}`;
       return (
         <div className="rounded-lg bg-white p-3 shadow-sm">
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs text-gray-500">
-              <span>Subtotal</span><span>$89,900</span>
+              <span>Subtotal</span><span>{formatted}</span>
             </div>
             <div className="flex justify-between text-xs text-gray-500">
               <span>Envio</span><span className="text-green-600 font-medium">Gratis</span>
             </div>
             <div className="flex justify-between border-t border-gray-100 pt-1.5 text-sm font-bold text-gray-800">
-              <span>Total</span><span className="text-emerald-600">$89,900</span>
+              <span>Total</span><span className="text-emerald-600">{formatted}</span>
             </div>
           </div>
         </div>
       );
+    }
 
     case 'field':
       return <PreviewField block={block} inputStyle={config.form_input_style} />;
@@ -241,6 +259,7 @@ function PreviewBlock({ block, config }) {
       if (config.cta_sticky) return null;
       const animation = config.cta_animation || 'none';
       const animClass = animation !== 'none' ? `ck-anim-${animation}` : '';
+      const btnPrice = config._productPrice || PREVIEW_PRICE;
       return (
         <div className={animClass}>
           <button
@@ -259,7 +278,7 @@ function PreviewBlock({ block, config }) {
             className="w-full py-2 font-bold"
           >
             <span className="flex flex-col items-center">
-              <span>{(config.cta_text || 'Completar pedido').replace('{order_total}', '$89,900')}</span>
+              <span>{(config.cta_text || 'Completar pedido').replace('{order_total}', `$${Math.round(btnPrice).toLocaleString('es-CO')}`)}</span>
               {config.cta_subtitle && (
                 <span className="mt-0.5 font-normal opacity-90" style={{ fontSize: `${Math.max((config.cta_subtitle_font_size || 12) * 0.65, 8)}px` }}>
                   {config.cta_subtitle}
@@ -290,7 +309,8 @@ function calcDiscountedPrice(basePrice, tier) {
   return basePrice;
 }
 
-function QuantityOfferPreview({ offer, tiers }) {
+function QuantityOfferPreview({ offer, tiers, basePrice: basePriceProp }) {
+  const price = basePriceProp || PREVIEW_PRICE;
   const sortedTiers = [...tiers].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
   const preselectedIdx = sortedTiers.findIndex((t) => t.is_preselected);
   const selectedIdx = preselectedIdx >= 0 ? preselectedIdx : 0;
@@ -308,9 +328,9 @@ function QuantityOfferPreview({ offer, tiers }) {
       <div className="space-y-1.5">
         {sortedTiers.map((tier, idx) => {
           const isSelected = idx === selectedIdx;
-          const discounted = calcDiscountedPrice(PREVIEW_PRICE, tier);
+          const discounted = calcDiscountedPrice(price, tier);
           const total = discounted * tier.quantity;
-          const savings = (PREVIEW_PRICE - discounted) * tier.quantity;
+          const savings = (price - discounted) * tier.quantity;
 
           return (
             <div
@@ -374,7 +394,7 @@ function QuantityOfferPreview({ offer, tiers }) {
   );
 }
 
-export default function CheckoutPreview({ config, quantityOffer = null }) {
+export default function CheckoutPreview({ config, quantityOffer = null, productImage = null, productName = null, productPrice = null }) {
   // Load Google Font dynamically for CTA
   useEffect(() => {
     const fontFamily = config.cta_font_family || 'Inter, sans-serif';
@@ -402,6 +422,10 @@ export default function CheckoutPreview({ config, quantityOffer = null }) {
     link.href = `https://fonts.googleapis.com/css2?family=${googleName}:wght@400;500;600;700&display=swap`;
     document.head.appendChild(link);
   }, [config.form_font_family]);
+
+  // Merge product data into config for PreviewBlock access
+  const cfgWithProduct = { ...config, _productImage: productImage, _productName: productName, _productPrice: productPrice };
+  const basePrice = productPrice || PREVIEW_PRICE;
 
   const blocks =[...(config.form_blocks || [])].filter((b) => b.enabled).sort((a, b) => a.position - b.position);
 
@@ -480,6 +504,7 @@ export default function CheckoutPreview({ config, quantityOffer = null }) {
                     key="qty-offer"
                     offer={quantityOffer}
                     tiers={quantityOffer.tiers}
+                    basePrice={basePrice}
                   />
                 );
               }
@@ -502,13 +527,13 @@ export default function CheckoutPreview({ config, quantityOffer = null }) {
                     </p>
                     <div className="space-y-2">
                       {item.fields.map((f, fi) => (
-                        <PreviewBlock key={`pf-${fi}`} block={f} config={config} />
+                        <PreviewBlock key={`pf-${fi}`} block={f} config={cfgWithProduct} />
                       ))}
                     </div>
                   </div>
                 );
               }
-              return <PreviewBlock key={`pb-${idx}`} block={item} config={config} />;
+              return <PreviewBlock key={`pb-${idx}`} block={item} config={cfgWithProduct} />;
             })}
           </div>
         </div>
@@ -532,7 +557,7 @@ export default function CheckoutPreview({ config, quantityOffer = null }) {
                 className="w-full py-2.5 font-bold"
               >
                 <span className="flex flex-col items-center">
-                  <span>{(config.cta_text || 'Completar pedido').replace('{order_total}', '$89,900')}</span>
+                  <span>{(config.cta_text || 'Completar pedido').replace('{order_total}', `$${Math.round(basePrice).toLocaleString('es-CO')}`)}</span>
                   {config.cta_subtitle && (
                     <span className="mt-0.5 font-normal opacity-90" style={{ fontSize: `${Math.max((config.cta_subtitle_font_size || 12) * 0.7, 8)}px` }}>
                       {config.cta_subtitle}

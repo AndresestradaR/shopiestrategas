@@ -103,6 +103,7 @@ class QuantityOfferTierCreate(BaseModel):
     label_bg_color: str = "#F59E0B"
     label_text_color: str = "#FFFFFF"
     price_color: str = "#059669"
+    hide_compare_price: bool = False
     image_url: str | None = None
 
 
@@ -119,6 +120,7 @@ class QuantityOfferTierResponse(BaseModel):
     label_bg_color: str
     label_text_color: str
     price_color: str
+    hide_compare_price: bool = False
     image_url: str | None = None
 
     model_config = {"from_attributes": True}

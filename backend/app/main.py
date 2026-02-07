@@ -104,6 +104,27 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"[migrate] checkout_offers->quantity_offers: {e}")
 
+    try:
+        async with engine.begin() as conn:
+            # add hide_compare_price to quantity_offer_tiers + widen color columns for rgba
+            result = await conn.execute(text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_schema = 'minishop' AND table_name = 'quantity_offer_tiers' AND column_name = 'hide_compare_price'"
+            ))
+            if not result.fetchone():
+                await conn.execute(text(
+                    "ALTER TABLE minishop.quantity_offer_tiers "
+                    "ADD COLUMN hide_compare_price BOOLEAN DEFAULT FALSE"
+                ))
+            # widen color columns from varchar(9) to varchar(50) for rgba support
+            for col in ('label_bg_color', 'label_text_color', 'price_color'):
+                await conn.execute(text(
+                    f"ALTER TABLE minishop.quantity_offer_tiers "
+                    f"ALTER COLUMN {col} TYPE VARCHAR(50)"
+                ))
+    except Exception as e:
+        print(f"[migrate] quantity_offer_tiers hide_compare_price: {e}")
+
     yield
 
 
