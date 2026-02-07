@@ -16,7 +16,6 @@ import {
   ArrowLeft,
   Package,
   ShoppingCart,
-  Image,
 } from "lucide-react";
 import client from "../../api/client";
 import CheckoutPreview from "./CheckoutPreview";
@@ -262,142 +261,171 @@ function ProductSelectorModal({ selectedIds, onConfirm, onClose }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Tier Row with expandable editor                                    */
+/*  Tier Accordion Card (Releasit-style)                               */
 /* ------------------------------------------------------------------ */
-function TierRow({ tier, index, onChange, onDelete, expanded, onToggleExpand }) {
+function TierCard({ tier, index, onChange, onDelete, expanded, onToggleExpand }) {
   const update = (field, value) => {
     onChange(index, { ...tier, [field]: value });
   };
 
+  const headerTitle = tier.title || `${tier.quantity} ${tier.quantity === 1 ? "unidad" : "unidades"}`;
+
   return (
-    <>
-      <tr className="border-b border-gray-100 hover:bg-gray-50/50">
-        <td className="px-3 py-2">
-          <input
-            type="text"
-            value={tier.title || ""}
-            onChange={(e) => update("title", e.target.value)}
-            className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
-            placeholder="Ej: 2 unidades"
-          />
-        </td>
-        <td className="px-3 py-2">
-          <input
-            type="number"
-            min={1}
-            value={tier.quantity}
-            onChange={(e) => update("quantity", parseInt(e.target.value) || 1)}
-            className="w-20 rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
-          />
-        </td>
-        <td className="px-3 py-2">
-          <select
-            value={tier.discount_type}
-            onChange={(e) => update("discount_type", e.target.value)}
-            className="rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
+    <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
+      {/* Accordion header */}
+      <button
+        type="button"
+        onClick={() => onToggleExpand(index)}
+        className="flex w-full items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="text-sm font-bold text-gray-800 truncate">{headerTitle}</span>
+          <span className="shrink-0 rounded bg-gray-100 px-1.5 py-0.5 text-xs font-medium text-gray-500">
+            x{tier.quantity}
+          </span>
+          {tier.is_preselected && (
+            <span className="shrink-0 rounded bg-[#4DBEA4]/10 px-1.5 py-0.5 text-[10px] font-semibold text-[#4DBEA4]">
+              Pre-sel.
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onDelete(index); }}
+            className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500"
           >
-            <option value="percentage">%</option>
-            <option value="fixed">$ fijo</option>
-          </select>
-        </td>
-        <td className="px-3 py-2">
-          <input
-            type="number"
-            min={0}
-            step={tier.discount_type === "percentage" ? 1 : 100}
-            value={tier.discount_value}
-            onChange={(e) => update("discount_value", parseFloat(e.target.value) || 0)}
-            className="w-24 rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
-          />
-        </td>
-        <td className="px-3 py-2">
-          <input
-            type="text"
-            value={tier.label_text || ""}
-            onChange={(e) => update("label_text", e.target.value || null)}
-            className="w-28 rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
-            placeholder="Etiqueta"
-          />
-        </td>
-        <td className="px-3 py-2 text-center">
-          <input
-            type="checkbox"
-            checked={tier.is_preselected}
-            onChange={(e) => update("is_preselected", e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-[#4DBEA4] focus:ring-[#4DBEA4]"
-          />
-        </td>
-        <td className="px-3 py-2">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => onToggleExpand(index)}
-              className={`rounded p-1 transition-colors ${expanded ? "bg-[#4DBEA4]/10 text-[#4DBEA4]" : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"}`}
-              title="Opciones avanzadas"
-            >
-              {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </button>
-            <button onClick={() => onDelete(index)} className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500">
-              <Trash2 size={14} />
-            </button>
-          </div>
-        </td>
-      </tr>
+            <Trash2 size={14} />
+          </button>
+          {expanded ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
+        </div>
+      </button>
+
+      {/* Accordion body */}
       {expanded && (
-        <tr className="border-b border-gray-100">
-          <td colSpan={7} className="bg-gray-50/70 px-4 py-4">
-            <div className="space-y-4">
-              {/* Row 1: hide_compare_price */}
-              <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3">
-                <div>
-                  <span className="text-sm font-medium text-gray-700">Ocultar precio tachado</span>
-                  <p className="text-xs text-gray-400">No mostrar el precio original comparativo</p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={tier.hide_compare_price || false}
-                  onChange={(e) => update("hide_compare_price", e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 text-[#4DBEA4] focus:ring-[#4DBEA4]"
-                />
-              </div>
-
-              {/* Row 2: Colors */}
-              <div className="grid grid-cols-3 gap-3">
-                <RgbaColorInput
-                  label="Color del precio"
-                  value={tier.price_color}
-                  onChange={(v) => update("price_color", v)}
-                />
-                <RgbaColorInput
-                  label="Fondo etiqueta"
-                  value={tier.label_bg_color}
-                  onChange={(v) => update("label_bg_color", v)}
-                />
-                <RgbaColorInput
-                  label="Texto etiqueta"
-                  value={tier.label_text_color}
-                  onChange={(v) => update("label_text_color", v)}
-                />
-              </div>
-
-              {/* Row 3: Image URL */}
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-600">URL de imagen del tier</label>
-                <div className="flex items-center gap-2">
-                  <Image size={16} className="shrink-0 text-gray-400" />
-                  <input
-                    type="text"
-                    value={tier.image_url || ""}
-                    onChange={(e) => update("image_url", e.target.value || null)}
-                    placeholder="https://... (opcional)"
-                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
-                  />
-                </div>
-              </div>
+        <div className="border-t border-gray-200 px-4 py-4 space-y-4">
+          {/* Titulo + Cantidad */}
+          <div className="grid grid-cols-[1fr_100px] gap-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Titulo</label>
+              <input
+                type="text"
+                value={tier.title || ""}
+                onChange={(e) => update("title", e.target.value)}
+                placeholder="Ej: Compra 2 unidades con descuento"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
+              />
+              <p className="mt-1 text-xs text-gray-400 italic">
+                Usa {"{product_name}"} para insertar el nombre del producto
+              </p>
             </div>
-          </td>
-        </tr>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Cantidad</label>
+              <input
+                type="number"
+                min={1}
+                value={tier.quantity}
+                onChange={(e) => update("quantity", parseInt(e.target.value) || 1)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
+              />
+            </div>
+          </div>
+
+          {/* Checkboxes */}
+          <div className="space-y-2.5">
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={tier.is_preselected}
+                onChange={(e) => update("is_preselected", e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-[#4DBEA4] focus:ring-[#4DBEA4]"
+              />
+              <span className="text-sm text-gray-700">Preseleccionar esta oferta</span>
+            </label>
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={tier.hide_compare_price || false}
+                onChange={(e) => update("hide_compare_price", e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300 text-[#4DBEA4] focus:ring-[#4DBEA4]"
+              />
+              <span className="text-sm text-gray-700">Oculta el precio de comparacion en la oferta</span>
+            </label>
+          </div>
+
+          {/* Tipo de descuento + Valor */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Tipo de descuento</label>
+              <select
+                value={tier.discount_type}
+                onChange={(e) => update("discount_type", e.target.value)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
+              >
+                <option value="percentage">Porcentaje</option>
+                <option value="fixed">Monto fijo</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Valor del descuento</label>
+              <input
+                type="number"
+                min={0}
+                step={tier.discount_type === "percentage" ? 1 : 100}
+                value={tier.discount_value}
+                onChange={(e) => update("discount_value", parseFloat(e.target.value) || 0)}
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
+              />
+            </div>
+          </div>
+
+          {/* Precio color + Texto de la etiqueta */}
+          <div className="grid grid-cols-2 gap-3">
+            <RgbaColorInput
+              label="Precio color"
+              value={tier.price_color}
+              onChange={(v) => update("price_color", v)}
+            />
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Texto de la etiqueta</label>
+              <input
+                type="text"
+                value={tier.label_text || ""}
+                onChange={(e) => update("label_text", e.target.value || null)}
+                placeholder="Ej: Ahorra 25%"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
+              />
+            </div>
+          </div>
+
+          {/* Color texto etiqueta + Color fondo etiqueta */}
+          <div className="grid grid-cols-2 gap-3">
+            <RgbaColorInput
+              label="Color del texto de la etiqueta"
+              value={tier.label_text_color}
+              onChange={(v) => update("label_text_color", v)}
+            />
+            <RgbaColorInput
+              label="Color del fondo de la etiqueta"
+              value={tier.label_bg_color}
+              onChange={(v) => update("label_bg_color", v)}
+            />
+          </div>
+
+          {/* URL de la imagen */}
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">URL de la imagen</label>
+            <input
+              type="text"
+              value={tier.image_url || ""}
+              onChange={(e) => update("image_url", e.target.value || null)}
+              placeholder="https://..."
+              className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
+            />
+          </div>
+        </div>
       )}
-    </>
+    </div>
   );
 }
 
@@ -682,33 +710,18 @@ function OfferEditor({ offer, onBack, onSaved, checkoutConfig }) {
             {tiers.length === 0 ? (
               <p className="py-6 text-center text-sm text-gray-400">No hay niveles. Agrega al menos uno.</p>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50 text-xs text-gray-500">
-                      <th className="px-3 py-2 font-medium">Titulo</th>
-                      <th className="px-3 py-2 font-medium">Cant.</th>
-                      <th className="px-3 py-2 font-medium">Tipo</th>
-                      <th className="px-3 py-2 font-medium">Descuento</th>
-                      <th className="px-3 py-2 font-medium">Etiqueta</th>
-                      <th className="px-3 py-2 font-medium text-center">Pre-sel.</th>
-                      <th className="px-3 py-2 font-medium"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tiers.map((tier, idx) => (
-                      <TierRow
-                        key={idx}
-                        tier={tier}
-                        index={idx}
-                        onChange={handleTierChange}
-                        onDelete={handleTierDelete}
-                        expanded={expandedTier === idx}
-                        onToggleExpand={toggleExpandTier}
-                      />
-                    ))}
-                  </tbody>
-                </table>
+              <div className="space-y-2">
+                {tiers.map((tier, idx) => (
+                  <TierCard
+                    key={idx}
+                    tier={tier}
+                    index={idx}
+                    onChange={handleTierChange}
+                    onDelete={handleTierDelete}
+                    expanded={expandedTier === idx}
+                    onToggleExpand={toggleExpandTier}
+                  />
+                ))}
               </div>
             )}
           </div>
