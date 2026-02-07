@@ -9,7 +9,7 @@ from sqlalchemy.orm import selectinload
 
 from app.api.deps import get_db
 from app.models.abandoned_cart import AbandonedCart
-from app.models.checkout_offer import CheckoutOffer
+from app.models.checkout_offer import QuantityOffer, QuantityOfferTier
 from app.models.customer import Customer
 from app.models.order import Order, OrderItem
 from app.models.product import Product
@@ -80,14 +80,13 @@ async def create_order(slug: str, data: OrderCreate, db: AsyncSession = Depends(
     order_items = []
     subtotal = 0
 
-    # Check for checkout offers
+    # Check for quantity offers
     offers_result = await db.execute(
-        select(CheckoutOffer).where(
-            CheckoutOffer.tenant_id == tenant.id,
-            CheckoutOffer.is_active == True,
-        )
+        select(QuantityOffer)
+        .where(QuantityOffer.tenant_id == tenant.id, QuantityOffer.is_active == True)
+        .options(selectinload(QuantityOffer.tiers))
     )
-    offers = {str(o.product_id): o for o in offers_result.scalars().all() if o.product_id}
+    all_offers = offers_result.scalars().all()
 
     for item_data in data.items:
         result = await db.execute(
@@ -109,14 +108,29 @@ async def create_order(slug: str, data: OrderCreate, db: AsyncSession = Depends(
             if variant:
                 variant_name = variant.name
 
-        # Apply quantity offers
-        offer = offers.get(str(product.id))
-        if offer and offer.rules:
-            rules = offer.rules if isinstance(offer.rules, list) else []
-            for rule in sorted(rules, key=lambda r: r.get("quantity", 0), reverse=True):
-                if item_data.quantity >= rule.get("quantity", 0):
-                    unit_price = rule.get("price", unit_price)
+        # Apply quantity offer tiers
+        pid_str = str(product.id)
+        matched_offer = None
+        for qo in all_offers:
+            pids = [str(p) for p in (qo.product_ids or [])]
+            if pid_str in pids:
+                matched_offer = qo
+                break
+
+        if matched_offer and matched_offer.tiers:
+            # Find the matching tier by quantity
+            matched_tier = None
+            for tier in sorted(matched_offer.tiers, key=lambda t: t.quantity, reverse=True):
+                if item_data.quantity >= tier.quantity:
+                    matched_tier = tier
                     break
+            if matched_tier and float(matched_tier.discount_value) > 0:
+                if matched_tier.discount_type == "percentage":
+                    unit_price = unit_price * (1 - float(matched_tier.discount_value) / 100)
+                elif matched_tier.discount_type == "fixed":
+                    unit_price = max(0, unit_price - float(matched_tier.discount_value))
+            # Increment orders_count
+            matched_offer.orders_count = (matched_offer.orders_count or 0) + 1
 
         total_price = unit_price * item_data.quantity
         subtotal += total_price

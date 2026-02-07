@@ -3,16 +3,18 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from fastapi import Depends
+import uuid as _uuid_mod
 
 from app.api.deps import get_db
 from app.models.checkout_config import CheckoutConfig
+from app.models.checkout_offer import QuantityOffer
 from app.models.product import Product
 from app.models.store_config import StoreConfig
 from app.models.store_page import StorePage
 from app.models.tenant import Tenant
 from app.schemas.checkout_config import CheckoutConfigResponse
 from app.schemas.product import ProductResponse
-from app.schemas.store import StoreConfigResponse, StorePageResponse
+from app.schemas.store import StoreConfigResponse, StorePageResponse, QuantityOfferResponse
 
 router = APIRouter(prefix="/api/store", tags=["store"])
 
@@ -85,3 +87,40 @@ async def get_store_page(slug: str, page_slug: str, db: AsyncSession = Depends(g
     if not page:
         raise HTTPException(status_code=404, detail="Page not found")
     return page
+
+
+@router.get("/{slug}/quantity-offers/{product_id}", response_model=QuantityOfferResponse | None)
+async def get_quantity_offer_for_product(
+    slug: str, product_id: str, db: AsyncSession = Depends(get_db)
+):
+    tenant = await get_tenant_by_slug(slug, db)
+    # Find the highest-priority active offer whose product_ids includes this product
+    result = await db.execute(
+        select(QuantityOffer)
+        .where(QuantityOffer.tenant_id == tenant.id, QuantityOffer.is_active == True)
+        .options(selectinload(QuantityOffer.tiers))
+        .order_by(QuantityOffer.priority.desc())
+    )
+    offers = result.scalars().all()
+    for offer in offers:
+        pids = offer.product_ids or []
+        if product_id in pids or str(product_id) in [str(p) for p in pids]:
+            return offer
+    return None
+
+
+@router.post("/{slug}/quantity-offers/{offer_id}/impression")
+async def register_impression(
+    slug: str, offer_id: str, db: AsyncSession = Depends(get_db)
+):
+    tenant = await get_tenant_by_slug(slug, db)
+    result = await db.execute(
+        select(QuantityOffer).where(
+            QuantityOffer.id == _uuid_mod.UUID(offer_id),
+            QuantityOffer.tenant_id == tenant.id,
+        )
+    )
+    offer = result.scalar_one_or_none()
+    if offer:
+        offer.impressions = (offer.impressions or 0) + 1
+    return {"status": "ok"}

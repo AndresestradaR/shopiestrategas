@@ -92,25 +92,78 @@ class StorePageUpdate(BaseModel):
     sort_order: int | None = None
 
 
-class CheckoutOfferResponse(BaseModel):
+class QuantityOfferTierCreate(BaseModel):
+    title: str = ""
+    quantity: int = 1
+    position: int = 0
+    is_preselected: bool = False
+    discount_type: str = "percentage"
+    discount_value: float = 0
+    label_text: str | None = None
+    label_bg_color: str = "#F59E0B"
+    label_text_color: str = "#FFFFFF"
+    price_color: str = "#059669"
+    image_url: str | None = None
+
+
+class QuantityOfferTierResponse(BaseModel):
     id: uuid.UUID
-    product_id: uuid.UUID | None = None
-    name: str
-    is_active: bool
-    rules: dict | None = None
-    show_savings: bool
-    show_per_unit: bool
+    offer_id: uuid.UUID
+    title: str
+    quantity: int
+    position: int
+    is_preselected: bool
+    discount_type: str
+    discount_value: float
+    label_text: str | None = None
+    label_bg_color: str
+    label_text_color: str
+    price_color: str
+    image_url: str | None = None
 
     model_config = {"from_attributes": True}
 
 
-class CheckoutOfferCreate(BaseModel):
-    product_id: uuid.UUID | None = None
+class QuantityOfferCreate(BaseModel):
     name: str
     is_active: bool = True
-    rules: dict | None = None
+    priority: int = 0
+    product_ids: list[str] | None = None
+    bg_color: str = "#FFFFFF"
+    border_color: str = "#E5E7EB"
+    selected_border_color: str = "#4DBEA4"
+    header_text: str = "Selecciona la cantidad"
+    header_bg_color: str = "#F9FAFB"
+    header_text_color: str = "#374151"
+    hide_product_image: bool = False
     show_savings: bool = True
-    show_per_unit: bool = False
+    show_per_unit: bool = True
+    tiers: list[QuantityOfferTierCreate] = []
+
+
+class QuantityOfferResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    name: str
+    is_active: bool
+    priority: int
+    product_ids: list | None = None
+    bg_color: str
+    border_color: str
+    selected_border_color: str
+    header_text: str
+    header_bg_color: str
+    header_text_color: str
+    hide_product_image: bool
+    show_savings: bool
+    show_per_unit: bool
+    impressions: int
+    orders_count: int
+    tiers: list[QuantityOfferTierResponse] = []
+    created_at: str | None = None
+    updated_at: str | None = None
+
+    model_config = {"from_attributes": True}
 
 
 class StoreAppResponse(BaseModel):

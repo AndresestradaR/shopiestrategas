@@ -19,7 +19,7 @@ export default function CheckoutBlockRenderer({
   setSelectedVariant,
   selectedOffer,
   setSelectedOffer,
-  offers,
+  quantityOffer,
   unitPrice,
   quantity,
   totalPrice,
@@ -29,7 +29,7 @@ export default function CheckoutBlockRenderer({
   submitting,
   onSubmit,
   totalPriceFormatted,
-  QuantityOffers,
+  QuantityOfferSelector,
   getImageUrl,
 }) {
   switch (block.type) {
@@ -59,16 +59,16 @@ export default function CheckoutBlockRenderer({
       );
 
     case 'offers':
-      if (!offers || offers.length === 0) return null;
+      if (!quantityOffer || !quantityOffer.tiers || quantityOffer.tiers.length === 0) return null;
       return (
         <div className="rounded-xl bg-white p-4 shadow-sm">
-          <QuantityOffers
-            offers={offers}
-            selectedQty={selectedOffer?.quantity || 1}
-            onSelect={setSelectedOffer}
+          <QuantityOfferSelector
+            offer={quantityOffer}
+            basePrice={unitPrice}
             currency={currency}
             country={country}
-            basePrice={unitPrice}
+            onSelect={setSelectedOffer}
+            getImageUrl={getImageUrl}
           />
         </div>
       );

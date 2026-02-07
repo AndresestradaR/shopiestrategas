@@ -4,7 +4,7 @@ from app.models.product import Product, ProductImage, ProductVariant
 from app.models.order import Order, OrderItem
 from app.models.store_page import StorePage
 from app.models.abandoned_cart import AbandonedCart
-from app.models.checkout_offer import CheckoutOffer
+from app.models.checkout_offer import QuantityOffer, QuantityOfferTier
 from app.models.customer import Customer
 from app.models.store_app import StoreApp
 from app.models.testimonial import Testimonial
@@ -23,7 +23,8 @@ __all__ = [
     "OrderItem",
     "StorePage",
     "AbandonedCart",
-    "CheckoutOffer",
+    "QuantityOffer",
+    "QuantityOfferTier",
     "Customer",
     "StoreApp",
     "Testimonial",

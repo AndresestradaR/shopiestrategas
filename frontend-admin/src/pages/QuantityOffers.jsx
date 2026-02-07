@@ -1,0 +1,974 @@
+import { useState, useEffect, useRef } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+import {
+  Loader2,
+  Plus,
+  Trash2,
+  Pencil,
+  X,
+  Copy,
+  ChevronUp,
+  ChevronDown,
+  Search,
+  ToggleLeft,
+  ToggleRight,
+  ArrowLeft,
+  Eye,
+  Package,
+  Zap,
+  ShoppingCart,
+  AlertCircle,
+  Check,
+} from "lucide-react";
+import client from "../api/client";
+
+/* ------------------------------------------------------------------ */
+/*  Constants                                                          */
+/* ------------------------------------------------------------------ */
+const PALETTES = [
+  { name: "Verde natural", bg: "#FFFFFF", border: "#E5E7EB", selected: "#059669", header_bg: "#F0FDF4", header_text: "#065F46", label_bg: "#059669", label_text: "#FFFFFF", price: "#059669" },
+  { name: "Azul confianza", bg: "#FFFFFF", border: "#E5E7EB", selected: "#2563EB", header_bg: "#EFF6FF", header_text: "#1E40AF", label_bg: "#2563EB", label_text: "#FFFFFF", price: "#2563EB" },
+  { name: "Naranja urgente", bg: "#FFFFFF", border: "#E5E7EB", selected: "#EA580C", header_bg: "#FFF7ED", header_text: "#9A3412", label_bg: "#EA580C", label_text: "#FFFFFF", price: "#EA580C" },
+  { name: "Rojo fuego", bg: "#FFFFFF", border: "#E5E7EB", selected: "#DC2626", header_bg: "#FEF2F2", header_text: "#991B1B", label_bg: "#DC2626", label_text: "#FFFFFF", price: "#DC2626" },
+  { name: "Morado premium", bg: "#FFFFFF", border: "#E5E7EB", selected: "#7C3AED", header_bg: "#F5F3FF", header_text: "#5B21B6", label_bg: "#7C3AED", label_text: "#FFFFFF", price: "#7C3AED" },
+  { name: "Dorado lujo", bg: "#FFFBEB", border: "#FDE68A", selected: "#D97706", header_bg: "#FFFBEB", header_text: "#92400E", label_bg: "#D97706", label_text: "#FFFFFF", price: "#B45309" },
+  { name: "Oscuro elegante", bg: "#1F2937", border: "#374151", selected: "#4DBEA4", header_bg: "#111827", header_text: "#F9FAFB", label_bg: "#4DBEA4", label_text: "#FFFFFF", price: "#4DBEA4" },
+  { name: "Rosa suave", bg: "#FFF1F2", border: "#FECDD3", selected: "#E11D48", header_bg: "#FFF1F2", header_text: "#9F1239", label_bg: "#E11D48", label_text: "#FFFFFF", price: "#BE123C" },
+];
+
+const TABS = [
+  { key: "upsells", label: "Upsells / Downsells", icon: Zap, disabled: true },
+  { key: "quantity", label: "Ofertas de Cantidad", icon: ShoppingCart },
+  { key: "abandoned", label: "Carrito Abandonado", icon: AlertCircle, disabled: true },
+];
+
+const DEFAULT_TIERS = [
+  { title: "1 unidad", quantity: 1, position: 0, is_preselected: false, discount_type: "percentage", discount_value: 0, label_text: null, label_bg_color: "#F59E0B", label_text_color: "#FFFFFF", price_color: "#059669", image_url: null },
+  { title: "2 unidades", quantity: 2, position: 1, is_preselected: true, discount_type: "percentage", discount_value: 10, label_text: "Mas popular", label_bg_color: "#F59E0B", label_text_color: "#FFFFFF", price_color: "#059669", image_url: null },
+  { title: "3 unidades", quantity: 3, position: 2, is_preselected: false, discount_type: "percentage", discount_value: 20, label_text: "Mejor oferta", label_bg_color: "#059669", label_text_color: "#FFFFFF", price_color: "#059669", image_url: null },
+];
+
+/* ------------------------------------------------------------------ */
+/*  Product Selector Modal                                             */
+/* ------------------------------------------------------------------ */
+function ProductSelectorModal({ selectedIds, onConfirm, onClose }) {
+  const [search, setSearch] = useState("");
+  const [selected, setSelected] = useState(new Set(selectedIds || []));
+
+  const { data: products, isLoading } = useQuery({
+    queryKey: ["admin-products-all"],
+    queryFn: async () => {
+      const res = await client.get("/admin/products?per_page=500");
+      return res.data?.items || res.data || [];
+    },
+    staleTime: 60000,
+  });
+
+  const filtered = (products || []).filter((p) =>
+    p.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const toggle = (id) => {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelected(next);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      <div className="w-full max-w-lg rounded-xl bg-white shadow-xl">
+        <div className="flex items-center justify-between border-b border-gray-200 p-4">
+          <h3 className="text-lg font-semibold text-gray-900">Seleccionar productos</h3>
+          <button onClick={onClose} className="rounded p-1 text-gray-400 hover:bg-gray-100">
+            <X size={18} />
+          </button>
+        </div>
+        <div className="p-4">
+          <div className="relative mb-3">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar producto..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
+            />
+          </div>
+          <div className="max-h-64 overflow-y-auto space-y-1">
+            {isLoading ? (
+              <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-gray-400" /></div>
+            ) : filtered.length === 0 ? (
+              <p className="py-4 text-center text-sm text-gray-400">No se encontraron productos</p>
+            ) : (
+              filtered.map((p) => (
+                <label key={p.id} className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 hover:bg-gray-50">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(p.id)}
+                    onChange={() => toggle(p.id)}
+                    className="h-4 w-4 rounded border-gray-300 text-[#4DBEA4] focus:ring-[#4DBEA4]"
+                  />
+                  <span className="text-sm text-gray-800">{p.name}</span>
+                  <span className="ml-auto text-xs text-gray-400">${Number(p.price).toLocaleString("es-CO")}</span>
+                </label>
+              ))
+            )}
+          </div>
+        </div>
+        <div className="flex justify-between border-t border-gray-200 p-4">
+          <span className="text-sm text-gray-500">{selected.size} seleccionados</span>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50">
+              Cancelar
+            </button>
+            <button
+              onClick={() => onConfirm([...selected])}
+              className="rounded-lg bg-[#4DBEA4] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+            >
+              Confirmar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Tier Row (inline edit)                                             */
+/* ------------------------------------------------------------------ */
+function TierRow({ tier, index, onChange, onDelete }) {
+  const update = (field, value) => {
+    onChange(index, { ...tier, [field]: value });
+  };
+
+  return (
+    <tr className="border-b border-gray-100 hover:bg-gray-50/50">
+      <td className="px-3 py-2">
+        <input
+          type="text"
+          value={tier.title || ""}
+          onChange={(e) => update("title", e.target.value)}
+          className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
+          placeholder="Ej: 2 unidades"
+        />
+      </td>
+      <td className="px-3 py-2">
+        <input
+          type="number"
+          min={1}
+          value={tier.quantity}
+          onChange={(e) => update("quantity", parseInt(e.target.value) || 1)}
+          className="w-20 rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
+        />
+      </td>
+      <td className="px-3 py-2">
+        <select
+          value={tier.discount_type}
+          onChange={(e) => update("discount_type", e.target.value)}
+          className="rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
+        >
+          <option value="percentage">%</option>
+          <option value="fixed">$ fijo</option>
+        </select>
+      </td>
+      <td className="px-3 py-2">
+        <input
+          type="number"
+          min={0}
+          step={tier.discount_type === "percentage" ? 1 : 100}
+          value={tier.discount_value}
+          onChange={(e) => update("discount_value", parseFloat(e.target.value) || 0)}
+          className="w-24 rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
+        />
+      </td>
+      <td className="px-3 py-2">
+        <input
+          type="text"
+          value={tier.label_text || ""}
+          onChange={(e) => update("label_text", e.target.value || null)}
+          className="w-28 rounded border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-[#4DBEA4]"
+          placeholder="Etiqueta"
+        />
+      </td>
+      <td className="px-3 py-2 text-center">
+        <input
+          type="checkbox"
+          checked={tier.is_preselected}
+          onChange={(e) => update("is_preselected", e.target.checked)}
+          className="h-4 w-4 rounded border-gray-300 text-[#4DBEA4] focus:ring-[#4DBEA4]"
+        />
+      </td>
+      <td className="px-3 py-2">
+        <button onClick={() => onDelete(index)} className="rounded p-1 text-gray-400 hover:bg-red-50 hover:text-red-500">
+          <Trash2 size={14} />
+        </button>
+      </td>
+    </tr>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Live Preview                                                       */
+/* ------------------------------------------------------------------ */
+function OfferPreview({ offer, tiers }) {
+  const [selectedIdx, setSelectedIdx] = useState(() => {
+    const pre = tiers.findIndex((t) => t.is_preselected);
+    return pre >= 0 ? pre : 0;
+  });
+
+  useEffect(() => {
+    const pre = tiers.findIndex((t) => t.is_preselected);
+    if (pre >= 0) setSelectedIdx(pre);
+  }, [tiers]);
+
+  const basePrice = 89900;
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <p className="mb-3 text-xs font-medium text-gray-500">Vista previa</p>
+      <div className="mx-auto w-[340px] rounded-2xl border border-gray-200 bg-white p-4 shadow-lg">
+        {/* Header */}
+        <div
+          className="mb-3 rounded-lg px-3 py-2 text-center text-sm font-bold"
+          style={{ backgroundColor: offer.header_bg_color, color: offer.header_text_color }}
+        >
+          {offer.header_text || "Selecciona la cantidad"}
+        </div>
+
+        {/* Tier cards */}
+        <div className="space-y-2">
+          {tiers.map((tier, idx) => {
+            const isSelected = idx === selectedIdx;
+            const discounted = tier.discount_type === "percentage"
+              ? basePrice * (1 - tier.discount_value / 100)
+              : Math.max(0, basePrice - tier.discount_value);
+            const total = discounted * tier.quantity;
+            const savings = (basePrice - discounted) * tier.quantity;
+
+            return (
+              <button
+                key={idx}
+                type="button"
+                onClick={() => setSelectedIdx(idx)}
+                className="relative flex w-full items-center justify-between rounded-xl border-2 p-3 text-left transition-all"
+                style={{
+                  backgroundColor: offer.bg_color,
+                  borderColor: isSelected ? offer.selected_border_color : offer.border_color,
+                }}
+              >
+                {/* Label badge */}
+                {tier.label_text && (
+                  <span
+                    className="absolute -top-2.5 left-3 rounded-full px-2 py-0.5 text-[10px] font-bold"
+                    style={{ backgroundColor: tier.label_bg_color, color: tier.label_text_color }}
+                  >
+                    {tier.label_text}
+                  </span>
+                )}
+
+                <div className="flex items-center gap-2.5">
+                  {/* Radio */}
+                  <div
+                    className="flex h-4 w-4 items-center justify-center rounded-full border-2"
+                    style={{ borderColor: isSelected ? offer.selected_border_color : "#D1D5DB" }}
+                  >
+                    {isSelected && (
+                      <div className="h-2 w-2 rounded-full" style={{ backgroundColor: offer.selected_border_color }} />
+                    )}
+                  </div>
+                  <div>
+                    <span className="text-sm font-bold text-gray-800">{tier.title || `${tier.quantity} und`}</span>
+                    {offer.show_per_unit && (
+                      <span className="ml-1 text-xs text-gray-400">
+                        (${Math.round(discounted).toLocaleString("es-CO")} c/u)
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <div className="text-base font-bold" style={{ color: tier.price_color }}>
+                    ${Math.round(total).toLocaleString("es-CO")}
+                  </div>
+                  {offer.show_savings && savings > 0 && (
+                    <div className="text-[10px] font-semibold text-green-600">
+                      Ahorras ${Math.round(savings).toLocaleString("es-CO")}
+                    </div>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Editor View                                                        */
+/* ------------------------------------------------------------------ */
+function OfferEditor({ offer, onBack, onSaved }) {
+  const queryClient = useQueryClient();
+  const isNew = !offer;
+
+  const [form, setForm] = useState(() => {
+    if (offer) {
+      return {
+        name: offer.name,
+        is_active: offer.is_active,
+        product_ids: offer.product_ids || [],
+        bg_color: offer.bg_color,
+        border_color: offer.border_color,
+        selected_border_color: offer.selected_border_color,
+        header_text: offer.header_text,
+        header_bg_color: offer.header_bg_color,
+        header_text_color: offer.header_text_color,
+        hide_product_image: offer.hide_product_image,
+        show_savings: offer.show_savings,
+        show_per_unit: offer.show_per_unit,
+        priority: offer.priority || 0,
+      };
+    }
+    return {
+      name: "",
+      is_active: true,
+      product_ids: [],
+      bg_color: "#FFFFFF",
+      border_color: "#E5E7EB",
+      selected_border_color: "#4DBEA4",
+      header_text: "Selecciona la cantidad",
+      header_bg_color: "#F9FAFB",
+      header_text_color: "#374151",
+      hide_product_image: false,
+      show_savings: true,
+      show_per_unit: true,
+      priority: 0,
+    };
+  });
+
+  const [tiers, setTiers] = useState(() => {
+    if (offer?.tiers?.length > 0) {
+      return offer.tiers.map((t) => ({
+        title: t.title,
+        quantity: t.quantity,
+        position: t.position,
+        is_preselected: t.is_preselected,
+        discount_type: t.discount_type,
+        discount_value: Number(t.discount_value),
+        label_text: t.label_text,
+        label_bg_color: t.label_bg_color,
+        label_text_color: t.label_text_color,
+        price_color: t.price_color,
+        image_url: t.image_url,
+      }));
+    }
+    return [...DEFAULT_TIERS];
+  });
+
+  const [showProductModal, setShowProductModal] = useState(false);
+
+  const updateForm = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
+
+  const handleTierChange = (idx, updated) => {
+    setTiers((prev) => prev.map((t, i) => (i === idx ? updated : t)));
+  };
+
+  const handleTierDelete = (idx) => {
+    setTiers((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const addTier = () => {
+    const nextQty = tiers.length > 0 ? Math.max(...tiers.map((t) => t.quantity)) + 1 : 1;
+    setTiers((prev) => [
+      ...prev,
+      {
+        title: `${nextQty} unidades`,
+        quantity: nextQty,
+        position: prev.length,
+        is_preselected: false,
+        discount_type: "percentage",
+        discount_value: 0,
+        label_text: null,
+        label_bg_color: "#F59E0B",
+        label_text_color: "#FFFFFF",
+        price_color: "#059669",
+        image_url: null,
+      },
+    ]);
+  };
+
+  const applyPalette = (p) => {
+    setForm((prev) => ({
+      ...prev,
+      bg_color: p.bg,
+      border_color: p.border,
+      selected_border_color: p.selected,
+      header_bg_color: p.header_bg,
+      header_text_color: p.header_text,
+    }));
+    setTiers((prev) =>
+      prev.map((t) => ({
+        ...t,
+        label_bg_color: p.label_bg,
+        label_text_color: p.label_text,
+        price_color: p.price,
+      }))
+    );
+  };
+
+  // Save mutation
+  const saveMutation = useMutation({
+    mutationFn: async (payload) => {
+      if (isNew) {
+        return client.post("/admin/checkout/offers", payload);
+      }
+      return client.put(`/admin/checkout/offers/${offer.id}`, payload);
+    },
+    onSuccess: () => {
+      toast.success(isNew ? "Oferta creada" : "Oferta actualizada");
+      queryClient.invalidateQueries({ queryKey: ["quantity-offers"] });
+      onSaved();
+    },
+    onError: () => toast.error("Error al guardar"),
+  });
+
+  const handleSave = () => {
+    if (!form.name.trim()) {
+      toast.error("El nombre es obligatorio");
+      return;
+    }
+    if (tiers.length === 0) {
+      toast.error("Agrega al menos un nivel");
+      return;
+    }
+    const payload = {
+      ...form,
+      tiers: tiers.map((t, i) => ({ ...t, position: i })),
+    };
+    saveMutation.mutate(payload);
+  };
+
+  // Fetch products for display
+  const { data: allProducts } = useQuery({
+    queryKey: ["admin-products-all"],
+    queryFn: async () => {
+      const res = await client.get("/admin/products?per_page=500");
+      return res.data?.items || res.data || [];
+    },
+    staleTime: 60000,
+  });
+
+  const selectedProducts = (allProducts || []).filter((p) => form.product_ids.includes(p.id));
+
+  return (
+    <div>
+      {/* Top bar */}
+      <div className="mb-6 flex items-center justify-between">
+        <button onClick={onBack} className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
+          <ArrowLeft size={16} />
+          Volver a la lista
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={saveMutation.isPending}
+          className="inline-flex items-center gap-2 rounded-lg bg-[#4DBEA4] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90 disabled:opacity-50"
+        >
+          {saveMutation.isPending && <Loader2 size={16} className="animate-spin" />}
+          {isNew ? "Crear oferta" : "Guardar cambios"}
+        </button>
+      </div>
+
+      <div className="flex gap-6">
+        {/* Left column: form */}
+        <div className="flex-1 min-w-0 space-y-5">
+          {/* Section 1: Configurar oferta */}
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="mb-4 text-base font-semibold text-gray-900">Configurar oferta</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Nombre de la oferta</label>
+                <input
+                  type="text"
+                  value={form.name}
+                  onChange={(e) => updateForm("name", e.target.value)}
+                  placeholder="Ej: Oferta 2+1"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
+                />
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border border-gray-200 p-3">
+                <span className="text-sm font-medium text-gray-700">Oferta activa</span>
+                <button
+                  type="button"
+                  onClick={() => updateForm("is_active", !form.is_active)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors ${form.is_active ? "bg-[#4DBEA4]" : "bg-gray-200"}`}
+                >
+                  <span className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${form.is_active ? "translate-x-5" : "translate-x-0"}`} />
+                </button>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Productos asignados ({form.product_ids.length})
+                </label>
+                {selectedProducts.length > 0 && (
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    {selectedProducts.map((p) => (
+                      <span key={p.id} className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+                        <Package size={12} />
+                        {p.name}
+                        <button
+                          onClick={() => updateForm("product_ids", form.product_ids.filter((id) => id !== p.id))}
+                          className="ml-0.5 text-gray-400 hover:text-red-500"
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowProductModal(true)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-dashed border-gray-300 px-4 py-2 text-sm text-gray-500 hover:border-[#4DBEA4] hover:text-[#4DBEA4]"
+                >
+                  <Plus size={14} />
+                  Seleccionar productos
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Tiers */}
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-base font-semibold text-gray-900">Niveles de cantidad</h3>
+              <button
+                onClick={addTier}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200"
+              >
+                <Plus size={13} />
+                Agregar nivel
+              </button>
+            </div>
+            {tiers.length === 0 ? (
+              <p className="py-6 text-center text-sm text-gray-400">No hay niveles. Agrega al menos uno.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200 bg-gray-50 text-xs text-gray-500">
+                      <th className="px-3 py-2 font-medium">Titulo</th>
+                      <th className="px-3 py-2 font-medium">Cant.</th>
+                      <th className="px-3 py-2 font-medium">Tipo</th>
+                      <th className="px-3 py-2 font-medium">Descuento</th>
+                      <th className="px-3 py-2 font-medium">Etiqueta</th>
+                      <th className="px-3 py-2 font-medium text-center">Pre-sel.</th>
+                      <th className="px-3 py-2 font-medium"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tiers.map((tier, idx) => (
+                      <TierRow
+                        key={idx}
+                        tier={tier}
+                        index={idx}
+                        onChange={handleTierChange}
+                        onDelete={handleTierDelete}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {/* Section 3: Design */}
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h3 className="mb-4 text-base font-semibold text-gray-900">Personalizacion visual</h3>
+
+            {/* Palettes */}
+            <div className="mb-5">
+              <label className="mb-2 block text-sm font-medium text-gray-700">Paletas predefinidas</label>
+              <div className="grid grid-cols-4 gap-2">
+                {PALETTES.map((p, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => applyPalette(p)}
+                    className="flex flex-col items-center gap-1 rounded-lg border border-gray-200 p-2 text-center hover:border-[#4DBEA4] hover:shadow-sm transition-all"
+                  >
+                    <div className="flex gap-0.5">
+                      <div className="h-4 w-4 rounded-full border" style={{ backgroundColor: p.selected }} />
+                      <div className="h-4 w-4 rounded-full border" style={{ backgroundColor: p.label_bg }} />
+                      <div className="h-4 w-4 rounded-full border" style={{ backgroundColor: p.header_bg }} />
+                    </div>
+                    <span className="text-[10px] text-gray-500">{p.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Manual colors */}
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Texto del encabezado</label>
+                <input
+                  type="text"
+                  value={form.header_text}
+                  onChange={(e) => updateForm("header_text", e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <ColorInput label="Fondo" value={form.bg_color} onChange={(v) => updateForm("bg_color", v)} />
+                <ColorInput label="Borde" value={form.border_color} onChange={(v) => updateForm("border_color", v)} />
+                <ColorInput label="Seleccionado" value={form.selected_border_color} onChange={(v) => updateForm("selected_border_color", v)} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <ColorInput label="Fondo encabezado" value={form.header_bg_color} onChange={(v) => updateForm("header_bg_color", v)} />
+                <ColorInput label="Texto encabezado" value={form.header_text_color} onChange={(v) => updateForm("header_text_color", v)} />
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border border-gray-200 p-3">
+                <span className="text-sm text-gray-700">Mostrar ahorro</span>
+                <input type="checkbox" checked={form.show_savings} onChange={(e) => updateForm("show_savings", e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-[#4DBEA4] focus:ring-[#4DBEA4]" />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-gray-200 p-3">
+                <span className="text-sm text-gray-700">Mostrar precio por unidad</span>
+                <input type="checkbox" checked={form.show_per_unit} onChange={(e) => updateForm("show_per_unit", e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-[#4DBEA4] focus:ring-[#4DBEA4]" />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-gray-200 p-3">
+                <span className="text-sm text-gray-700">Ocultar imagen del producto</span>
+                <input type="checkbox" checked={form.hide_product_image} onChange={(e) => updateForm("hide_product_image", e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-[#4DBEA4] focus:ring-[#4DBEA4]" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right column: Preview */}
+        <div className="hidden xl:block w-[400px] shrink-0 sticky top-6 self-start">
+          <OfferPreview offer={form} tiers={tiers} />
+        </div>
+      </div>
+
+      {showProductModal && (
+        <ProductSelectorModal
+          selectedIds={form.product_ids}
+          onConfirm={(ids) => {
+            updateForm("product_ids", ids);
+            setShowProductModal(false);
+          }}
+          onClose={() => setShowProductModal(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Color input (simple inline)                                        */
+/* ------------------------------------------------------------------ */
+function ColorInput({ label, value, onChange }) {
+  return (
+    <div>
+      <label className="mb-1 block text-xs font-medium text-gray-600">{label}</label>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-8 w-8 cursor-pointer rounded border border-gray-200"
+        />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full rounded border border-gray-200 px-2 py-1 text-xs font-mono outline-none focus:border-[#4DBEA4]"
+        />
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Offer List View                                                    */
+/* ------------------------------------------------------------------ */
+function OfferListItem({ offer, onEdit, onToggle, onDuplicate, onDelete, onPriority }) {
+  return (
+    <div className="flex items-center gap-4 rounded-xl border border-gray-200 bg-white px-5 py-4 shadow-sm transition-all hover:shadow-md">
+      {/* Priority arrows */}
+      <div className="flex flex-col gap-0.5">
+        <button onClick={() => onPriority(offer.id, "up")} className="rounded p-0.5 text-gray-300 hover:bg-gray-100 hover:text-gray-600">
+          <ChevronUp size={14} />
+        </button>
+        <button onClick={() => onPriority(offer.id, "down")} className="rounded p-0.5 text-gray-300 hover:bg-gray-100 hover:text-gray-600">
+          <ChevronDown size={14} />
+        </button>
+      </div>
+
+      {/* Toggle */}
+      <button
+        onClick={() => onToggle(offer.id)}
+        className="shrink-0"
+        title={offer.is_active ? "Desactivar" : "Activar"}
+      >
+        {offer.is_active ? (
+          <ToggleRight size={28} className="text-[#4DBEA4]" />
+        ) : (
+          <ToggleLeft size={28} className="text-gray-300" />
+        )}
+      </button>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-gray-900">{offer.name}</span>
+          {!offer.is_active && (
+            <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-500">Inactiva</span>
+          )}
+        </div>
+        <div className="mt-0.5 flex items-center gap-3 text-xs text-gray-400">
+          <span>{offer.tiers?.length || 0} niveles</span>
+          <span>{(offer.product_ids || []).length} productos</span>
+          <span>{offer.impressions || 0} vistas</span>
+          <span>{offer.orders_count || 0} pedidos</span>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex items-center gap-1">
+        <button onClick={() => onEdit(offer)} className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600" title="Editar">
+          <Pencil size={15} />
+        </button>
+        <button onClick={() => onDuplicate(offer.id)} className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600" title="Duplicar">
+          <Copy size={15} />
+        </button>
+        <button onClick={() => onDelete(offer.id)} className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-500" title="Eliminar">
+          <Trash2 size={15} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/*  Main Page Component                                                */
+/* ------------------------------------------------------------------ */
+export default function QuantityOffers() {
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("quantity");
+  const [view, setView] = useState("list"); // list | editor
+  const [editingOffer, setEditingOffer] = useState(null);
+  const [search, setSearch] = useState("");
+
+  // Fetch offers
+  const { data: offers, isLoading } = useQuery({
+    queryKey: ["quantity-offers"],
+    queryFn: async () => {
+      const res = await client.get("/admin/checkout/offers");
+      return res.data;
+    },
+  });
+
+  // Mutations
+  const toggleMutation = useMutation({
+    mutationFn: (id) => client.patch(`/admin/checkout/offers/${id}/toggle`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["quantity-offers"] });
+    },
+  });
+
+  const priorityMutation = useMutation({
+    mutationFn: ({ id, direction }) =>
+      client.patch(`/admin/checkout/offers/${id}/priority?direction=${direction}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["quantity-offers"] });
+    },
+  });
+
+  const duplicateMutation = useMutation({
+    mutationFn: (id) => client.post(`/admin/checkout/offers/${id}/duplicate`),
+    onSuccess: () => {
+      toast.success("Oferta duplicada");
+      queryClient.invalidateQueries({ queryKey: ["quantity-offers"] });
+    },
+    onError: () => toast.error("Error al duplicar"),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => client.delete(`/admin/checkout/offers/${id}`),
+    onSuccess: () => {
+      toast.success("Oferta eliminada");
+      queryClient.invalidateQueries({ queryKey: ["quantity-offers"] });
+    },
+    onError: () => toast.error("Error al eliminar"),
+  });
+
+  const handleDelete = (id) => {
+    if (window.confirm("Eliminar esta oferta?")) {
+      deleteMutation.mutate(id);
+    }
+  };
+
+  const handleEdit = (offer) => {
+    setEditingOffer(offer);
+    setView("editor");
+  };
+
+  const handleNew = () => {
+    setEditingOffer(null);
+    setView("editor");
+  };
+
+  const handleBack = () => {
+    setView("list");
+    setEditingOffer(null);
+  };
+
+  const offerList = Array.isArray(offers) ? offers : [];
+  const filtered = offerList.filter((o) =>
+    o.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // Editor view
+  if (view === "editor") {
+    return (
+      <div>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-gray-900">Impulsor de Ventas</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            {editingOffer ? `Editando: ${editingOffer.name}` : "Nueva oferta de cantidad"}
+          </p>
+        </div>
+        <OfferEditor
+          offer={editingOffer}
+          onBack={handleBack}
+          onSaved={handleBack}
+        />
+      </div>
+    );
+  }
+
+  // List view
+  return (
+    <div>
+      {/* Page header */}
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Impulsor de Ventas</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Configura ofertas por cantidad, upsells y mas
+          </p>
+        </div>
+        <button
+          onClick={handleNew}
+          className="inline-flex items-center gap-2 rounded-lg bg-[#4DBEA4] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:opacity-90"
+        >
+          <Plus size={16} />
+          Nueva oferta
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="mb-6 flex gap-1 rounded-lg border border-gray-200 bg-gray-50 p-1">
+        {TABS.map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => !tab.disabled && setActiveTab(tab.key)}
+              disabled={tab.disabled}
+              className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === tab.key
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : tab.disabled
+                  ? "text-gray-300 cursor-not-allowed"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Icon size={16} />
+              {tab.label}
+              {tab.disabled && (
+                <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-400">Pronto</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tab content */}
+      {activeTab === "quantity" && (
+        <>
+          {/* Search */}
+          {offerList.length > 0 && (
+            <div className="relative mb-4">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar oferta..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-lg border border-gray-200 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
+              />
+            </div>
+          )}
+
+          {/* List */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="h-7 w-7 animate-spin text-gray-400" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16 text-gray-400">
+              <ShoppingCart size={40} className="mb-3" />
+              <p className="mb-1 text-base font-medium">No hay ofertas de cantidad</p>
+              <p className="mb-4 text-sm">Crea tu primera oferta para aumentar el ticket promedio</p>
+              <button
+                onClick={handleNew}
+                className="inline-flex items-center gap-2 rounded-lg bg-[#4DBEA4] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+              >
+                <Plus size={16} />
+                Crear oferta
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filtered.map((offer) => (
+                <OfferListItem
+                  key={offer.id}
+                  offer={offer}
+                  onEdit={handleEdit}
+                  onToggle={(id) => toggleMutation.mutate(id)}
+                  onDuplicate={(id) => duplicateMutation.mutate(id)}
+                  onDelete={handleDelete}
+                  onPriority={(id, dir) => priorityMutation.mutate({ id, direction: dir })}
+                />
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {activeTab === "upsells" && (
+        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16 text-gray-400">
+          <Zap size={40} className="mb-3" />
+          <p className="text-base font-medium">Upsells & Downsells</p>
+          <p className="text-sm">Proximamente</p>
+        </div>
+      )}
+
+      {activeTab === "abandoned" && (
+        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16 text-gray-400">
+          <AlertCircle size={40} className="mb-3" />
+          <p className="text-base font-medium">Recuperacion de Carrito Abandonado</p>
+          <p className="text-sm">Proximamente</p>
+        </div>
+      )}
+    </div>
+  );
+}

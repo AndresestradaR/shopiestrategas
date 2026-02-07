@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import useStore from '../hooks/useStore';
+import { useQuery } from '@tanstack/react-query';
 import useCheckoutConfig from '../hooks/useCheckoutConfig';
 import { formatPrice } from '../components/ProductCard';
-import QuantityOffers from '../components/QuantityOffers';
+import QuantityOfferSelector from '../components/checkout/QuantityOfferSelector';
 import { usePixel } from '../components/PixelProvider';
 import { mergeConfig } from '../components/checkout/defaults';
 import CheckoutBlockRenderer from '../components/checkout/CheckoutBlockRenderer';
@@ -43,10 +44,24 @@ export default function Checkout() {
   const currency = config?.currency || 'COP';
   const country = config?.country || 'CO';
   const storeName = config?.store_name || 'Tienda';
-  const offers = config?.checkout_offers || product?.checkout_offers || [];
 
   // Merge fetched checkout config with defaults
   const cfg = mergeConfig(checkoutConfig);
+
+  // Fetch quantity offer for this product
+  const API_BASE = import.meta.env.VITE_API_URL || '';
+  const { data: quantityOffer } = useQuery({
+    queryKey: ['quantity-offer', slug, product?.id],
+    queryFn: async () => {
+      if (!slug || !product?.id) return null;
+      const res = await fetch(`${API_BASE}/api/store/${slug}/quantity-offers/${product.id}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data;
+    },
+    enabled: !!slug && !!product?.id,
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Load Google Font for form typography
   useEffect(() => {
@@ -87,17 +102,14 @@ export default function Checkout() {
     }
   }, [product, selectedVariant]);
 
+  // Register impression when quantity offer loads
   useEffect(() => {
-    if (offers.length > 0 && !selectedOffer) {
-      const highlighted = offers.find((o) => o.is_highlighted);
-      const initial = highlighted || offers[0];
-      setSelectedOffer({
-        quantity: initial.quantity,
-        unitPrice: initial.price,
-        totalPrice: initial.price * initial.quantity,
-      });
+    if (quantityOffer?.id && slug) {
+      fetch(`${API_BASE}/api/store/${slug}/quantity-offers/${quantityOffer.id}/impression`, {
+        method: 'POST',
+      }).catch(() => {});
     }
-  }, [offers, selectedOffer]);
+  }, [quantityOffer?.id, slug]);
 
   const unitPrice = selectedVariant?.price || product?.price || 0;
   const quantity = selectedOffer?.quantity || 1;
@@ -284,7 +296,7 @@ export default function Checkout() {
     setSelectedVariant,
     selectedOffer,
     setSelectedOffer,
-    offers,
+    quantityOffer,
     unitPrice,
     quantity,
     totalPrice,
@@ -294,7 +306,7 @@ export default function Checkout() {
     submitting,
     onSubmit: handleSubmit,
     totalPriceFormatted,
-    QuantityOffers,
+    QuantityOfferSelector,
     getImageUrl,
   };
 

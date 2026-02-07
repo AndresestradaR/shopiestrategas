@@ -83,6 +83,17 @@ async def lifespan(app: FastAPI):
                     "ALTER TABLE minishop.checkout_configs "
                     "ADD COLUMN form_font_family VARCHAR(100) DEFAULT 'Inter, sans-serif'"
                 ))
+
+        # Auto-migrate: drop old checkout_offers table if it exists (replaced by quantity_offers + quantity_offer_tiers)
+        async with engine.begin() as conn:
+            result = await conn.execute(text(
+                "SELECT table_name FROM information_schema.tables "
+                "WHERE table_schema = 'minishop' AND table_name = 'checkout_offers'"
+            ))
+            if result.fetchone():
+                await conn.execute(text("DROP TABLE IF EXISTS minishop.checkout_offers CASCADE"))
+            # create_all will handle quantity_offers + quantity_offer_tiers
+            await conn.run_sync(Base.metadata.create_all)
     yield
 
 
