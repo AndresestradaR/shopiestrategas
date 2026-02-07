@@ -1,21 +1,41 @@
 import { useParams, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import useStore from '../hooks/useStore';
 import { usePixel } from '../components/PixelProvider';
+import { formatPrice } from '../components/ProductCard';
 import { useEffect } from 'react';
 
 export default function Confirm() {
   const { orderId } = useParams();
-  const { config } = useStore();
+  const { config, slug } = useStore();
   const { trackEvent } = usePixel();
 
   const storeName = config?.store_name || 'Tienda';
+  const currency = config?.currency || 'COP';
+  const country = config?.country || 'CO';
   const successMessage =
     config?.success_message ||
     'Tu pedido ha sido recibido exitosamente. Te contactaremos pronto para confirmar los detalles de envio.';
 
+  const API_BASE = import.meta.env.VITE_API_URL || '';
+
+  const { data: orderData } = useQuery({
+    queryKey: ['order-summary', slug, orderId],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/api/store/${slug}/order/${orderId}`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!slug && !!orderId,
+    staleTime: 10 * 60 * 1000,
+  });
+
   useEffect(() => {
     trackEvent('PageView');
   }, [trackEvent]);
+
+  const items = orderData?.items || [];
+  const orderTotal = orderData?.total;
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
@@ -47,11 +67,46 @@ export default function Confirm() {
           {/* Order number */}
           <div className="mb-4 inline-block rounded-full bg-gray-100 px-4 py-2">
             <span className="text-sm text-gray-500">Pedido #</span>{' '}
-            <span className="font-bold text-gray-800">{orderId}</span>
+            <span className="font-bold text-gray-800">
+              {orderData?.order_number || orderId}
+            </span>
           </div>
 
           {/* Message */}
-          <p className="mb-8 leading-relaxed text-gray-600">{successMessage}</p>
+          <p className="mb-6 leading-relaxed text-gray-600">{successMessage}</p>
+
+          {/* Order items summary */}
+          {items.length > 0 && (
+            <div className="mb-6 rounded-xl border border-gray-100 bg-gray-50 p-4 text-left">
+              <h3 className="mb-3 text-sm font-bold text-gray-700">Resumen del pedido</h3>
+              <div className="space-y-2">
+                {items.map((item, idx) => (
+                  <div key={idx} className="flex items-start justify-between gap-2 text-sm">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-gray-800">{item.product_name}</p>
+                      {item.variant_name && (
+                        <p className="text-xs text-gray-500">{item.variant_name}</p>
+                      )}
+                      {item.quantity > 1 && (
+                        <p className="text-xs text-gray-500">Cant: {item.quantity}</p>
+                      )}
+                    </div>
+                    <span className="flex-shrink-0 font-semibold text-gray-700">
+                      {formatPrice(item.total_price, currency, country)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              {orderTotal != null && (
+                <div className="mt-3 flex items-center justify-between border-t border-gray-200 pt-3">
+                  <span className="text-sm font-bold text-gray-800">Total</span>
+                  <span className="text-base font-bold text-gray-900">
+                    {formatPrice(orderTotal, currency, country)}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Payment info */}
           <div className="mb-6 rounded-xl bg-amber-50 p-4">
@@ -87,7 +142,7 @@ export default function Confirm() {
           {/* WhatsApp */}
           {config?.whatsapp_number && (
             <a
-              href={`https://wa.me/${config.whatsapp_number.replace(/\D/g, '')}?text=Hola,%20acabo%20de%20hacer%20el%20pedido%20%23${orderId}`}
+              href={`https://wa.me/${config.whatsapp_number.replace(/\D/g, '')}?text=Hola,%20acabo%20de%20hacer%20el%20pedido%20%23${orderData?.order_number || orderId}`}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border-2 border-green-500 py-3 font-semibold text-green-600 transition-colors hover:bg-green-50"

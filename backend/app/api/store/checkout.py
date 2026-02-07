@@ -213,6 +213,45 @@ async def create_order(slug: str, data: OrderCreate, db: AsyncSession = Depends(
     return OrderCreatedResponse(order_id=order.id, order_number=order_number)
 
 
+@router.get("/{slug}/order/{order_id}")
+async def get_order_summary(
+    slug: str,
+    order_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Public endpoint: returns basic order summary for confirmation page."""
+    tenant = await _get_tenant_by_slug(slug, db)
+
+    result = await db.execute(
+        select(Order)
+        .where(Order.id == order_id, Order.tenant_id == tenant.id)
+        .options(selectinload(Order.items))
+    )
+    order = result.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    items = [
+        {
+            "product_name": item.product_name,
+            "variant_name": item.variant_name,
+            "quantity": item.quantity,
+            "unit_price": float(item.unit_price),
+            "total_price": float(item.total_price),
+        }
+        for item in order.items
+    ]
+
+    return {
+        "order_id": str(order.id),
+        "order_number": order.order_number,
+        "customer_name": order.customer_name,
+        "total": float(order.total),
+        "status": order.status,
+        "items": items,
+    }
+
+
 @router.post("/{slug}/cart/capture")
 async def capture_cart(slug: str, data: CartCapture, db: AsyncSession = Depends(get_db)):
     tenant = await _get_tenant_by_slug(slug, db)
