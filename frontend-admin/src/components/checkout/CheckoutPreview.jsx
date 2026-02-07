@@ -432,41 +432,54 @@ export default function CheckoutPreview({ config, quantityOffer = null, productI
   const animation = config.cta_animation || 'none';
   const stickyAnimClass = animation !== 'none' ? `ck-anim-${animation}` : '';
 
-  // Group consecutive fields
+  // Group consecutive fields + insert quantity offer BEFORE price_summary
   const groups = [];
   let fieldGroup = [];
-  let offersInserted = false;
+  let offerInserted = false;
+  const hasOffer = quantityOffer && quantityOffer.tiers?.length > 0;
+
   for (const block of blocks) {
     if (block.type === 'field') {
-      // Insert quantity offer preview before the first field group (after product/variants)
-      if (!offersInserted && quantityOffer && quantityOffer.tiers?.length > 0) {
+      // Before the first field, insert offer if not yet inserted
+      if (!offerInserted && hasOffer && fieldGroup.length === 0) {
         groups.push({ type: '_quantity_offer' });
-        offersInserted = true;
+        offerInserted = true;
       }
       fieldGroup.push(block);
     } else {
+      // Flush field group
       if (fieldGroup.length > 0) {
         groups.push({ type: '_field_group', fields: fieldGroup });
         fieldGroup = [];
       }
-      // Insert quantity offer preview after 'offers' block position if present
-      if (block.type === 'offers' && !offersInserted && quantityOffer && quantityOffer.tiers?.length > 0) {
+
+      // Insert offer BEFORE price_summary
+      if (block.type === 'price_summary' && !offerInserted && hasOffer) {
         groups.push({ type: '_quantity_offer' });
-        offersInserted = true;
-      } else {
-        groups.push(block);
+        offerInserted = true;
       }
+
+      // Skip old 'offers' block type
+      if (block.type === 'offers') continue;
+
+      groups.push(block);
     }
   }
+
+  // Flush remaining fields
   if (fieldGroup.length > 0) {
+    if (!offerInserted && hasOffer) {
+      groups.push({ type: '_quantity_offer' });
+      offerInserted = true;
+    }
     groups.push({ type: '_field_group', fields: fieldGroup });
   }
-  // If we still haven't inserted the offer (no 'offers' block and no fields yet), insert after variants/price_summary
-  if (!offersInserted && quantityOffer && quantityOffer.tiers?.length > 0) {
-    // Find the best insertion point: after product_card and variants, before price_summary
-    const insertIdx = groups.findIndex((g) => g.type === 'price_summary' || g.type === '_field_group');
-    if (insertIdx >= 0) {
-      groups.splice(insertIdx, 0, { type: '_quantity_offer' });
+
+  // Last resort: insert after variants
+  if (!offerInserted && hasOffer) {
+    const insertAfter = groups.findIndex((g) => g.type === 'variants');
+    if (insertAfter >= 0) {
+      groups.splice(insertAfter + 1, 0, { type: '_quantity_offer' });
     } else {
       groups.push({ type: '_quantity_offer' });
     }
