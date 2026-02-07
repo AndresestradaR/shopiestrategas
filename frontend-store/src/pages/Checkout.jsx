@@ -9,6 +9,7 @@ import { usePixel } from '../components/PixelProvider';
 import { mergeConfig } from '../components/checkout/defaults';
 import CheckoutBlockRenderer from '../components/checkout/CheckoutBlockRenderer';
 import CheckoutStickyButton from '../components/checkout/CheckoutStickyButton';
+import UpsellPopup from '../components/checkout/UpsellPopup';
 
 const getImageUrl = (imgUrl) => {
   if (!imgUrl) return '';
@@ -40,6 +41,9 @@ export default function Checkout() {
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  // Upsell state
+  const [showUpsell, setShowUpsell] = useState(false);
+  const [pendingOrderId, setPendingOrderId] = useState(null);
 
   const product = products?.find((p) => p.slug === productSlug);
   const currency = config?.currency || 'COP';
@@ -63,6 +67,22 @@ export default function Checkout() {
     enabled: !!slug && !!product?.id,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Fetch upsells for this product
+  const { data: upsellData } = useQuery({
+    queryKey: ['upsells', slug, product?.id],
+    queryFn: async () => {
+      if (!slug || !product?.id) return null;
+      const res = await fetch(`${API_BASE}/api/store/${slug}/upsells/${product.id}`);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    enabled: !!slug && !!product?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const upsellsAvailable = upsellData?.upsells?.length > 0;
+  const upsellType = upsellData?.config?.upsell_type || 'post_purchase';
 
   // Load Google Font for form typography
   useEffect(() => {
@@ -171,6 +191,44 @@ export default function Checkout() {
     return errors;
   };
 
+  // Build the order payload (reused by both flows)
+  const buildOrderPayload = (extraItems = []) => {
+    const items = [
+      {
+        product_id: product.id,
+        variant_id: selectedVariant?.id || null,
+        quantity,
+      },
+      ...extraItems,
+    ];
+    return {
+      customer_name: `${form.customer_first_name} ${form.customer_last_name}`.trim(),
+      customer_phone: form.customer_phone,
+      customer_email: form.email || null,
+      address: form.address,
+      city: form.city,
+      state: form.state || null,
+      address_notes: form.address_extra || null,
+      notes: form.notes || null,
+      items,
+    };
+  };
+
+  // Create order on the backend
+  const createOrder = async (payload) => {
+    const API_URL = import.meta.env.VITE_API_URL || '';
+    const res = await fetch(`${API_URL}/api/store/${slug}/order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => null);
+      throw new Error(errorData?.detail || 'Error al crear el pedido');
+    }
+    return res.json();
+  };
+
   const handleSubmit = async (e) => {
     if (e?.preventDefault) e.preventDefault();
     const errors = validate();
@@ -181,31 +239,16 @@ export default function Checkout() {
 
     setSubmitting(true);
     try {
-      const orderData = {
-        ...form,
-        customer_name: `${form.customer_first_name} ${form.customer_last_name}`.trim(),
-        product_id: product.id,
-        product_slug: product.slug,
-        variant_id: selectedVariant?.id || null,
-        variant_name: selectedVariant?.name || null,
-        quantity,
-        unit_price: selectedOffer?.unitPrice || unitPrice,
-        total_price: totalPrice,
-      };
-
-      const API_URL = import.meta.env.VITE_API_URL || "";
-      const res = await fetch(`${API_URL}/api/store/${slug}/order`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(orderData),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => null);
-        throw new Error(errorData?.detail || 'Error al crear el pedido');
+      // Pre-purchase upsells: show popup BEFORE creating order
+      if (upsellsAvailable && upsellType === 'pre_purchase') {
+        setSubmitting(false);
+        setShowUpsell(true);
+        return;
       }
 
-      const data = await res.json();
+      // Post-purchase or no upsells: create order first
+      const payload = buildOrderPayload();
+      const data = await createOrder(payload);
 
       trackEvent('Purchase', {
         id: product.id,
@@ -214,11 +257,54 @@ export default function Checkout() {
         currency,
       });
 
-      navigate(`/confirmacion/${data.id || data.order_id}`);
+      // Post-purchase upsells: show popup AFTER creating order
+      if (upsellsAvailable && upsellType === 'post_purchase') {
+        setPendingOrderId(data.order_id);
+        setSubmitting(false);
+        setShowUpsell(true);
+        return;
+      }
+
+      navigate(`/confirmacion/${data.order_id}`);
     } catch (err) {
       setFormErrors({ _general: err.message || 'Error al procesar el pedido. Intenta de nuevo.' });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Called when all upsells are done
+  const handleUpsellComplete = async (acceptedItems) => {
+    setShowUpsell(false);
+
+    if (upsellType === 'post_purchase') {
+      // Order already created, upsell items already added via API
+      navigate(`/confirmacion/${pendingOrderId}`);
+    } else {
+      // Pre-purchase: create order with all items
+      setSubmitting(true);
+      try {
+        const extraItems = acceptedItems.map((item) => ({
+          product_id: item.product_id,
+          variant_id: item.variant_id,
+          quantity: item.quantity,
+        }));
+        const payload = buildOrderPayload(extraItems);
+        const data = await createOrder(payload);
+
+        trackEvent('Purchase', {
+          id: product.id,
+          name: product.name,
+          price: totalPrice,
+          currency,
+        });
+
+        navigate(`/confirmacion/${data.order_id}`);
+      } catch (err) {
+        setFormErrors({ _general: err.message || 'Error al procesar el pedido. Intenta de nuevo.' });
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
 
@@ -426,6 +512,21 @@ export default function Checkout() {
           totalPriceFormatted={totalPriceFormatted}
           submitting={submitting}
           onSubmit={handleSubmit}
+        />
+      )}
+
+      {/* Upsell popup */}
+      {showUpsell && upsellData?.upsells?.length > 0 && (
+        <UpsellPopup
+          upsells={upsellData.upsells}
+          upsellConfig={upsellData.config}
+          customerName={form.customer_first_name}
+          slug={slug}
+          orderId={pendingOrderId}
+          formatPriceFn={formatPrice}
+          currency={currency}
+          country={country}
+          onComplete={handleUpsellComplete}
         />
       )}
     </div>
