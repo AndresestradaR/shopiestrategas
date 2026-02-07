@@ -5,10 +5,12 @@ from sqlalchemy.orm import selectinload
 from fastapi import Depends
 
 from app.api.deps import get_db
+from app.models.checkout_config import CheckoutConfig
 from app.models.product import Product
 from app.models.store_config import StoreConfig
 from app.models.store_page import StorePage
 from app.models.tenant import Tenant
+from app.schemas.checkout_config import CheckoutConfigResponse
 from app.schemas.product import ProductResponse
 from app.schemas.store import StoreConfigResponse, StorePageResponse
 
@@ -60,6 +62,16 @@ async def get_store_product(slug: str, product_slug: str, db: AsyncSession = Dep
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
+
+
+@router.get("/{slug}/checkout-config", response_model=CheckoutConfigResponse | None)
+async def get_store_checkout_config(slug: str, db: AsyncSession = Depends(get_db)):
+    tenant = await get_tenant_by_slug(slug, db)
+    result = await db.execute(
+        select(CheckoutConfig).where(CheckoutConfig.tenant_id == tenant.id)
+    )
+    config = result.scalar_one_or_none()
+    return config
 
 
 @router.get("/{slug}/pages/{page_slug}", response_model=StorePageResponse)

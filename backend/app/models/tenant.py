@@ -26,6 +26,7 @@ class Tenant(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
     store_config = relationship("StoreConfig", back_populates="tenant", uselist=False)
+    checkout_config = relationship("CheckoutConfig", back_populates="tenant", uselist=False)
     products = relationship("Product", back_populates="tenant")
     orders = relationship("Order", back_populates="tenant")
     pages = relationship("StorePage", back_populates="tenant")

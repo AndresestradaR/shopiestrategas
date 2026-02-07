@@ -10,6 +10,7 @@ from app.models.store_app import StoreApp
 from app.models.testimonial import Testimonial
 from app.models.store_visit import StoreVisit
 from app.models.page_design import PageDesign  # noqa: F401
+from app.models.checkout_config import CheckoutConfig
 
 __all__ = [
     "Tenant",
@@ -28,4 +29,5 @@ __all__ = [
     "Testimonial",
     "StoreVisit",
     "PageDesign",
+    "CheckoutConfig",
 ]
