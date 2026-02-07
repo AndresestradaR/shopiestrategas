@@ -20,6 +20,13 @@ import {
 import client from "../../api/client";
 import CheckoutPreview from "./CheckoutPreview";
 
+const getImageUrl = (imgUrl) => {
+  if (!imgUrl) return null;
+  if (imgUrl.startsWith('http')) return imgUrl;
+  const apiBase = import.meta.env.VITE_API_URL || '';
+  return `${apiBase}${imgUrl}`;
+};
+
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
@@ -645,9 +652,10 @@ function OfferEditor({ offer, onBack, onSaved, checkoutConfig }) {
 
   // Get first product data for preview
   const firstProduct = selectedProducts.length > 0 ? selectedProducts[0] : null;
-  const productImage = firstProduct?.images?.length > 0
+  const rawImageUrl = firstProduct?.images?.length > 0
     ? (firstProduct.images.find((img) => img.is_primary) || firstProduct.images[0])?.image_url
     : null;
+  const productImage = getImageUrl(rawImageUrl);
   const productName = firstProduct?.name || null;
   const productPrice = firstProduct ? Number(firstProduct.price) : null;
 
