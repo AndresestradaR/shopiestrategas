@@ -16,12 +16,10 @@ import {
   ArrowLeft,
   Eye,
   Package,
-  Zap,
   ShoppingCart,
-  AlertCircle,
   Check,
 } from "lucide-react";
-import client from "../api/client";
+import client from "../../api/client";
 
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
@@ -35,12 +33,6 @@ const PALETTES = [
   { name: "Dorado lujo", bg: "#FFFBEB", border: "#FDE68A", selected: "#D97706", header_bg: "#FFFBEB", header_text: "#92400E", label_bg: "#D97706", label_text: "#FFFFFF", price: "#B45309" },
   { name: "Oscuro elegante", bg: "#1F2937", border: "#374151", selected: "#4DBEA4", header_bg: "#111827", header_text: "#F9FAFB", label_bg: "#4DBEA4", label_text: "#FFFFFF", price: "#4DBEA4" },
   { name: "Rosa suave", bg: "#FFF1F2", border: "#FECDD3", selected: "#E11D48", header_bg: "#FFF1F2", header_text: "#9F1239", label_bg: "#E11D48", label_text: "#FFFFFF", price: "#BE123C" },
-];
-
-const TABS = [
-  { key: "upsells", label: "Upsells / Downsells", icon: Zap, disabled: true },
-  { key: "quantity", label: "Ofertas de Cantidad", icon: ShoppingCart },
-  { key: "abandoned", label: "Carrito Abandonado", icon: AlertCircle, disabled: true },
 ];
 
 const DEFAULT_TIERS = [
@@ -696,7 +688,7 @@ function ColorInput({ label, value, onChange }) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Offer List View                                                    */
+/*  Offer List Item                                                    */
 /* ------------------------------------------------------------------ */
 function OfferListItem({ offer, onEdit, onToggle, onDuplicate, onDelete, onPriority }) {
   return (
@@ -757,11 +749,10 @@ function OfferListItem({ offer, onEdit, onToggle, onDuplicate, onDelete, onPrior
 }
 
 /* ------------------------------------------------------------------ */
-/*  Main Page Component                                                */
+/*  Main Tab Component                                                 */
 /* ------------------------------------------------------------------ */
-export default function QuantityOffers() {
+export default function QuantityOffersTab() {
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("quantity");
   const [view, setView] = useState("list"); // list | editor
   const [editingOffer, setEditingOffer] = useState(null);
   const [search, setSearch] = useState("");
@@ -838,32 +829,32 @@ export default function QuantityOffers() {
   // Editor view
   if (view === "editor") {
     return (
-      <div>
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Impulsor de Ventas</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            {editingOffer ? `Editando: ${editingOffer.name}` : "Nueva oferta de cantidad"}
-          </p>
-        </div>
-        <OfferEditor
-          offer={editingOffer}
-          onBack={handleBack}
-          onSaved={handleBack}
-        />
-      </div>
+      <OfferEditor
+        offer={editingOffer}
+        onBack={handleBack}
+        onSaved={handleBack}
+      />
     );
   }
 
   // List view
   return (
     <div>
-      {/* Page header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Impulsor de Ventas</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Configura ofertas por cantidad, upsells y mas
-          </p>
+      {/* New offer button + search */}
+      <div className="mb-4 flex items-center justify-between">
+        <div className="relative flex-1 max-w-sm">
+          {offerList.length > 0 && (
+            <>
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar oferta..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-lg border border-gray-200 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
+              />
+            </>
+          )}
         </div>
         <button
           onClick={handleNew}
@@ -874,99 +865,37 @@ export default function QuantityOffers() {
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="mb-6 flex gap-1 rounded-lg border border-gray-200 bg-gray-50 p-1">
-        {TABS.map((tab) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.key}
-              onClick={() => !tab.disabled && setActiveTab(tab.key)}
-              disabled={tab.disabled}
-              className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
-                activeTab === tab.key
-                  ? "bg-white text-gray-900 shadow-sm"
-                  : tab.disabled
-                  ? "text-gray-300 cursor-not-allowed"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <Icon size={16} />
-              {tab.label}
-              {tab.disabled && (
-                <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-400">Pronto</span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Tab content */}
-      {activeTab === "quantity" && (
-        <>
-          {/* Search */}
-          {offerList.length > 0 && (
-            <div className="relative mb-4">
-              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Buscar oferta..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-lg border border-gray-200 py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
-              />
-            </div>
-          )}
-
-          {/* List */}
-          {isLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-7 w-7 animate-spin text-gray-400" />
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16 text-gray-400">
-              <ShoppingCart size={40} className="mb-3" />
-              <p className="mb-1 text-base font-medium">No hay ofertas de cantidad</p>
-              <p className="mb-4 text-sm">Crea tu primera oferta para aumentar el ticket promedio</p>
-              <button
-                onClick={handleNew}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#4DBEA4] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
-              >
-                <Plus size={16} />
-                Crear oferta
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filtered.map((offer) => (
-                <OfferListItem
-                  key={offer.id}
-                  offer={offer}
-                  onEdit={handleEdit}
-                  onToggle={(id) => toggleMutation.mutate(id)}
-                  onDuplicate={(id) => duplicateMutation.mutate(id)}
-                  onDelete={handleDelete}
-                  onPriority={(id, dir) => priorityMutation.mutate({ id, direction: dir })}
-                />
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {activeTab === "upsells" && (
-        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16 text-gray-400">
-          <Zap size={40} className="mb-3" />
-          <p className="text-base font-medium">Upsells & Downsells</p>
-          <p className="text-sm">Proximamente</p>
+      {/* List */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-7 w-7 animate-spin text-gray-400" />
         </div>
-      )}
-
-      {activeTab === "abandoned" && (
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16 text-gray-400">
-          <AlertCircle size={40} className="mb-3" />
-          <p className="text-base font-medium">Recuperacion de Carrito Abandonado</p>
-          <p className="text-sm">Proximamente</p>
+          <ShoppingCart size={40} className="mb-3" />
+          <p className="mb-1 text-base font-medium">No hay ofertas de cantidad</p>
+          <p className="mb-4 text-sm">Crea tu primera oferta para aumentar el ticket promedio</p>
+          <button
+            onClick={handleNew}
+            className="inline-flex items-center gap-2 rounded-lg bg-[#4DBEA4] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+          >
+            <Plus size={16} />
+            Crear oferta
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filtered.map((offer) => (
+            <OfferListItem
+              key={offer.id}
+              offer={offer}
+              onEdit={handleEdit}
+              onToggle={(id) => toggleMutation.mutate(id)}
+              onDuplicate={(id) => duplicateMutation.mutate(id)}
+              onDelete={handleDelete}
+              onPriority={(id, dir) => priorityMutation.mutate({ id, direction: dir })}
+            />
+          ))}
         </div>
       )}
     </div>

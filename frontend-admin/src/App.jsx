@@ -19,7 +19,7 @@ import Pixels from "./pages/Pixels";
 import Analytics from "./pages/Analytics";
 import PageDesigns from "./pages/PageDesigns";
 import PageDesigner from "./pages/PageDesigner";
-import QuantityOffers from "./pages/QuantityOffers";
+
 
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem("token");
@@ -59,7 +59,6 @@ export default function App() {
         <Route path="/pixels" element={<Pixels />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/designs" element={<PageDesigns />} />
-        <Route path="/quantity-offers" element={<QuantityOffers />} />
       </Route>
 
       {/* Full-screen routes (outside BuilderLayout) */}

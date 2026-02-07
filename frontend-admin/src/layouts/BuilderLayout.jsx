@@ -15,7 +15,6 @@ import {
   Paintbrush,
   ExternalLink,
   ArrowLeft,
-  TrendingUp,
 } from "lucide-react";
 
 const navSections = [
@@ -31,7 +30,6 @@ const navSections = [
   {
     label: "Marketing",
     items: [
-      { to: "/quantity-offers", icon: TrendingUp, text: "Impulsor de Ventas" },
       { to: "/abandoned-carts", icon: ShoppingBag, text: "Carritos abandonados" },
       { to: "/customers", icon: Users, text: "Clientes" },
     ],

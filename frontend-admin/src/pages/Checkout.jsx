@@ -6,6 +6,9 @@ import {
   AlertCircle,
   Palette,
   RotateCcw,
+  ShoppingCart,
+  Zap,
+  ShoppingBag,
 } from "lucide-react";
 import client from "../api/client";
 import CTAButtonEditor from "../components/checkout/CTAButtonEditor";
@@ -14,6 +17,7 @@ import FormStyleEditor from "../components/checkout/FormStyleEditor";
 import TextsEditor from "../components/checkout/TextsEditor";
 import OptionsEditor from "../components/checkout/OptionsEditor";
 import CheckoutPreview from "../components/checkout/CheckoutPreview";
+import QuantityOffersTab from "../components/checkout/QuantityOffersTab";
 
 /* ------------------------------------------------------------------ */
 /*  Default blocks (matches backend DEFAULT_BLOCKS)                    */
@@ -60,6 +64,7 @@ const DEFAULT_CONFIG = {
   form_border_color: "#E5E7EB",
   form_shadow: "sm",
   form_input_style: "outline",
+  form_font_family: "Inter, sans-serif",
   form_blocks: DEFAULT_BLOCKS,
   custom_fields: null,
   form_title: "Datos de envio",
@@ -75,12 +80,23 @@ const DEFAULT_CONFIG = {
 };
 
 /* ------------------------------------------------------------------ */
+/*  Tab definitions                                                    */
+/* ------------------------------------------------------------------ */
+const TABS = [
+  { key: "design", label: "Diseno del Formulario", icon: Palette },
+  { key: "quantity", label: "Ofertas de Cantidad", icon: ShoppingCart },
+  { key: "upsells", label: "Upsells/Downsells", icon: Zap, disabled: true },
+  { key: "abandoned", label: "Carrito Abandonado", icon: ShoppingBag, disabled: true },
+];
+
+/* ------------------------------------------------------------------ */
 /*  Main Checkout page                                                 */
 /* ------------------------------------------------------------------ */
 
 export default function Checkout() {
   const queryClient = useQueryClient();
   const [localConfig, setLocalConfig] = useState(null);
+  const [activeTab, setActiveTab] = useState("design");
   const debounceRef = useRef(null);
 
   // Fetch checkout config
@@ -204,31 +220,82 @@ export default function Checkout() {
             Personaliza el diseno, campos y ofertas de tu checkout
           </p>
         </div>
-        <button
-          onClick={handleReset}
-          disabled={resetMutation.isPending}
-          className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
-        >
-          <RotateCcw size={14} />
-          Restablecer
-        </button>
+        {activeTab === "design" && (
+          <button
+            onClick={handleReset}
+            disabled={resetMutation.isPending}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+          >
+            <RotateCcw size={14} />
+            Restablecer
+          </button>
+        )}
       </div>
 
-      {/* Editor panels */}
-      <div className="flex gap-6">
-        {/* Left: editor panels */}
-        <div className="flex-1 min-w-0 space-y-5">
-          <CTAButtonEditor config={cfg} onChange={handleConfigChange} />
-          <FormBlocksEditor blocks={cfg.form_blocks} onChange={handleBlocksChange} />
-          <FormStyleEditor config={cfg} onChange={handleConfigChange} />
-          <TextsEditor config={cfg} onChange={handleConfigChange} />
-          <OptionsEditor config={cfg} onChange={handleConfigChange} />
-        </div>
-        {/* Right: live preview (hidden on small screens) */}
-        <div className="hidden xl:block sticky top-6 self-start">
-          <CheckoutPreview config={cfg} />
-        </div>
+      {/* Tabs */}
+      <div className="mb-6 flex gap-1 rounded-lg border border-gray-200 bg-gray-50 p-1">
+        {TABS.map((tab) => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => !tab.disabled && setActiveTab(tab.key)}
+              disabled={tab.disabled}
+              className={`flex items-center gap-2 rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === tab.key
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : tab.disabled
+                  ? "text-gray-300 cursor-not-allowed"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <Icon size={16} />
+              {tab.label}
+              {tab.disabled && (
+                <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-400">Pronto</span>
+              )}
+            </button>
+          );
+        })}
       </div>
+
+      {/* Tab content */}
+      {activeTab === "design" && (
+        <div className="flex gap-6">
+          {/* Left: editor panels */}
+          <div className="flex-1 min-w-0 space-y-5">
+            <CTAButtonEditor config={cfg} onChange={handleConfigChange} />
+            <FormBlocksEditor blocks={cfg.form_blocks} onChange={handleBlocksChange} />
+            <FormStyleEditor config={cfg} onChange={handleConfigChange} />
+            <TextsEditor config={cfg} onChange={handleConfigChange} />
+            <OptionsEditor config={cfg} onChange={handleConfigChange} />
+          </div>
+          {/* Right: live preview (hidden on small screens) */}
+          <div className="hidden xl:block sticky top-6 self-start">
+            <CheckoutPreview config={cfg} />
+          </div>
+        </div>
+      )}
+
+      {activeTab === "quantity" && (
+        <QuantityOffersTab />
+      )}
+
+      {activeTab === "upsells" && (
+        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16 text-gray-400">
+          <Zap size={40} className="mb-3" />
+          <p className="text-base font-medium">Upsells & Downsells</p>
+          <p className="text-sm">Proximamente</p>
+        </div>
+      )}
+
+      {activeTab === "abandoned" && (
+        <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-16 text-gray-400">
+          <ShoppingBag size={40} className="mb-3" />
+          <p className="text-base font-medium">Recuperacion de Carrito Abandonado</p>
+          <p className="text-sm">Proximamente</p>
+        </div>
+      )}
     </div>
   );
 }
