@@ -259,30 +259,49 @@ export default function Checkout() {
     .filter((b) => b.enabled)
     .sort((a, b) => a.position - b.position);
 
-  // Separate field blocks to group them inside a card
-  const fieldBlockTypes = new Set(['field']);
-  let inFieldGroup = false;
+  // Build render groups: group consecutive fields, inject quantity offer
+  const hasOffer = quantityOffer && quantityOffer.tiers && quantityOffer.tiers.length > 0;
   const renderGroups = [];
   let currentFieldGroup = [];
+  let offerInserted = false;
 
   for (const block of blocks) {
-    if (fieldBlockTypes.has(block.type)) {
-      if (!inFieldGroup) {
-        inFieldGroup = true;
-        currentFieldGroup = [];
+    // Hide product_card and variants when quantity offer is active
+    if (hasOffer && (block.type === 'product_card' || block.type === 'variants')) continue;
+    // Skip old 'offers' block type (we inject it automatically)
+    if (block.type === 'offers') continue;
+
+    if (block.type === 'field') {
+      // Before the first field, inject offer if not yet inserted
+      if (!offerInserted && hasOffer && currentFieldGroup.length === 0) {
+        renderGroups.push({ type: '_quantity_offer' });
+        offerInserted = true;
       }
       currentFieldGroup.push(block);
     } else {
-      if (inFieldGroup) {
+      // Flush field group
+      if (currentFieldGroup.length > 0) {
         renderGroups.push({ type: 'field_group', fields: currentFieldGroup });
-        inFieldGroup = false;
         currentFieldGroup = [];
+      }
+      // Insert offer BEFORE price_summary
+      if (block.type === 'price_summary' && !offerInserted && hasOffer) {
+        renderGroups.push({ type: '_quantity_offer' });
+        offerInserted = true;
       }
       renderGroups.push(block);
     }
   }
-  if (inFieldGroup && currentFieldGroup.length > 0) {
+  if (currentFieldGroup.length > 0) {
+    if (!offerInserted && hasOffer) {
+      renderGroups.push({ type: '_quantity_offer' });
+      offerInserted = true;
+    }
     renderGroups.push({ type: 'field_group', fields: currentFieldGroup });
+  }
+  // Last resort: append offer at end
+  if (!offerInserted && hasOffer) {
+    renderGroups.push({ type: '_quantity_offer' });
   }
 
   const sharedProps = {
@@ -339,6 +358,20 @@ export default function Checkout() {
       <main className="mx-auto max-w-lg px-4 py-5">
         <form onSubmit={handleSubmit} className="space-y-5" style={{ fontFamily: cfg.form_font_family || 'Inter, sans-serif' }}>
           {renderGroups.map((item, idx) => {
+            // Quantity offer block (auto-injected)
+            if (item.type === '_quantity_offer') {
+              return (
+                <QuantityOfferSelector
+                  key="qty-offer"
+                  offer={quantityOffer}
+                  basePrice={unitPrice}
+                  currency={currency}
+                  country={country}
+                  onSelect={setSelectedOffer}
+                  getImageUrl={getImageUrl}
+                />
+              );
+            }
             // Field group: wrap consecutive fields in a card
             if (item.type === 'field_group') {
               return (

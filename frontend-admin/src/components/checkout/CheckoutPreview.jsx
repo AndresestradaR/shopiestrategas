@@ -175,13 +175,15 @@ function PreviewBlock({ block, config }) {
 
     case 'price_summary': {
       if (!config.show_price_summary) return null;
-      const displayPrice = config._productPrice ?? PREVIEW_PRICE;
-      const formatted = `$${Math.round(displayPrice).toLocaleString('es-CO')}`;
+      const totalPrice = config._effectivePrice ?? config._productPrice ?? PREVIEW_PRICE;
+      const qty = config._effectiveQty || 1;
+      const unitPrice = config._productPrice ?? PREVIEW_PRICE;
+      const formatted = `$${Math.round(totalPrice).toLocaleString('es-CO')}`;
       return (
         <div className="rounded-lg bg-white p-4 shadow-sm">
           <div className="space-y-2">
             <div className="flex justify-between text-sm text-gray-500">
-              <span>Subtotal</span><span>{formatted}</span>
+              <span>Subtotal ({qty}x ${Math.round(unitPrice).toLocaleString('es-CO')})</span><span>{formatted}</span>
             </div>
             <div className="flex justify-between text-sm text-gray-500">
               <span>Envio</span><span className="text-green-600 font-medium">Gratis</span>
@@ -259,7 +261,7 @@ function PreviewBlock({ block, config }) {
       if (config.cta_sticky) return null;
       const animation = config.cta_animation || 'none';
       const animClass = animation !== 'none' ? `ck-anim-${animation}` : '';
-      const btnPrice = config._productPrice || PREVIEW_PRICE;
+      const btnPrice = config._effectivePrice || config._productPrice || PREVIEW_PRICE;
       return (
         <div className={animClass}>
           <button
@@ -447,8 +449,22 @@ export default function CheckoutPreview({ config, quantityOffer = null, productI
   }, [config.form_font_family]);
 
   // Merge product data into config for PreviewBlock access
-  const cfgWithProduct = { ...config, _productImage: productImage, _productName: productName, _productPrice: productPrice };
   const basePrice = productPrice || PREVIEW_PRICE;
+
+  // Calculate effective price from preselected quantity offer tier
+  let effectivePrice = basePrice;
+  let effectiveQty = 1;
+  if (quantityOffer && quantityOffer.tiers?.length > 0) {
+    const sorted = [...quantityOffer.tiers].sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+    const preIdx = sorted.findIndex((t) => t.is_preselected);
+    const selectedTier = sorted[preIdx >= 0 ? preIdx : 0];
+    if (selectedTier) {
+      const discounted = calcDiscountedPrice(basePrice, selectedTier);
+      effectivePrice = discounted * selectedTier.quantity;
+      effectiveQty = selectedTier.quantity;
+    }
+  }
+  const cfgWithProduct = { ...config, _productImage: productImage, _productName: productName, _productPrice: productPrice, _effectivePrice: effectivePrice, _effectiveQty: effectiveQty };
 
   const blocks = [...(config.form_blocks || [])].filter((b) => b.enabled).sort((a, b) => a.position - b.position);
 
@@ -590,7 +606,7 @@ export default function CheckoutPreview({ config, quantityOffer = null, productI
                 className="w-full py-3 font-bold"
               >
                 <span className="flex flex-col items-center">
-                  <span>{(config.cta_text || 'Completar pedido').replace('{order_total}', `$${Math.round(basePrice).toLocaleString('es-CO')}`)}</span>
+                  <span>{(config.cta_text || 'Completar pedido').replace('{order_total}', `$${Math.round(effectivePrice).toLocaleString('es-CO')}`)}</span>
                   {config.cta_subtitle && (
                     <span className="mt-0.5 font-normal opacity-90" style={{ fontSize: `${Math.max((config.cta_subtitle_font_size || 12) * 0.85, 10)}px` }}>
                       {config.cta_subtitle}
