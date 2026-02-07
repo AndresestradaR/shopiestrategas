@@ -12,22 +12,19 @@ router = APIRouter(prefix="/api/admin/checkout-config", tags=["admin-checkout-co
 
 DEFAULT_BLOCKS = [
     {"type": "product_card", "position": 0, "enabled": True},
-    {"type": "offers", "position": 1, "enabled": True},
-    {"type": "variants", "position": 2, "enabled": True},
-    {"type": "price_summary", "position": 3, "enabled": True},
-    {"type": "field", "position": 4, "enabled": True, "field_key": "customer_first_name", "label": "Nombre", "placeholder": "Nombre", "required": True, "icon": "user"},
-    {"type": "field", "position": 5, "enabled": True, "field_key": "customer_last_name", "label": "Apellido", "placeholder": "Apellido", "required": True, "icon": "user"},
-    {"type": "field", "position": 6, "enabled": True, "field_key": "customer_phone", "label": "Telefono", "placeholder": "WhatsApp", "required": True, "icon": "phone", "input_type": "tel"},
-    {"type": "field", "position": 7, "enabled": True, "field_key": "address", "label": "Direccion", "placeholder": "Calle carrera #casa", "required": True, "icon": "map-pin"},
-    {"type": "field", "position": 8, "enabled": True, "field_key": "address_extra", "label": "Complemento direccion", "placeholder": "Barrio y punto de referencia", "required": False, "icon": "map-pin"},
-    {"type": "field", "position": 9, "enabled": True, "field_key": "state", "label": "Departamento", "placeholder": "Departamento", "required": True, "icon": "map-pin"},
-    {"type": "field", "position": 10, "enabled": True, "field_key": "city", "label": "Ciudad", "placeholder": "Ciudad", "required": True, "icon": "map-pin"},
-    {"type": "field", "position": 11, "enabled": True, "field_key": "email", "label": "Correo electronico", "placeholder": "email@ejemplo.com", "required": False, "icon": "mail", "input_type": "email"},
-    {"type": "field", "position": 12, "enabled": True, "field_key": "notes", "label": "Notas adicionales", "placeholder": "Indicaciones especiales para la entrega...", "required": False, "icon": "note", "input_type": "textarea"},
-    {"type": "trust_badge", "position": 13, "enabled": True},
-    {"type": "shipping_info", "position": 14, "enabled": True},
-    {"type": "payment_method", "position": 15, "enabled": True},
-    {"type": "submit_button", "position": 16, "enabled": True},
+    {"type": "variants", "position": 1, "enabled": True},
+    {"type": "price_summary", "position": 2, "enabled": True},
+    {"type": "field", "position": 3, "enabled": True, "field_key": "customer_first_name", "label": "Nombre", "placeholder": "Nombre", "required": True, "icon": "user"},
+    {"type": "field", "position": 4, "enabled": True, "field_key": "customer_last_name", "label": "Apellido", "placeholder": "Apellido", "required": True, "icon": "user"},
+    {"type": "field", "position": 5, "enabled": True, "field_key": "customer_phone", "label": "Telefono", "placeholder": "WhatsApp", "required": True, "icon": "phone", "input_type": "tel"},
+    {"type": "field", "position": 6, "enabled": True, "field_key": "address", "label": "Direccion", "placeholder": "Calle carrera #casa", "required": True, "icon": "map-pin"},
+    {"type": "field", "position": 7, "enabled": True, "field_key": "address_extra", "label": "Complemento direccion", "placeholder": "Barrio y punto de referencia", "required": False, "icon": "map-pin"},
+    {"type": "field", "position": 8, "enabled": True, "field_key": "state", "label": "Departamento", "placeholder": "Departamento", "required": True, "icon": "map-pin"},
+    {"type": "field", "position": 9, "enabled": True, "field_key": "city", "label": "Ciudad", "placeholder": "Ciudad", "required": True, "icon": "map-pin"},
+    {"type": "field", "position": 10, "enabled": True, "field_key": "email", "label": "Correo electronico", "placeholder": "email@ejemplo.com", "required": False, "icon": "mail", "input_type": "email"},
+    {"type": "field", "position": 11, "enabled": True, "field_key": "notes", "label": "Notas adicionales", "placeholder": "Indicaciones especiales para la entrega...", "required": False, "icon": "note", "input_type": "textarea"},
+    {"type": "trust_badge", "position": 12, "enabled": True},
+    {"type": "submit_button", "position": 13, "enabled": True},
 ]
 
 
@@ -99,6 +96,8 @@ async def reset_checkout_config(
         config.cta_border_color = "#000000"
         config.cta_shadow = "lg"
         config.cta_sticky_mobile = True
+        config.cta_subtitle_font_size = 12
+        config.cta_font_family = "Inter, sans-serif"
         config.form_bg_color = "#FFFFFF"
         config.form_text_color = "#1F2937"
         config.form_font_size = 14
@@ -116,7 +115,7 @@ async def reset_checkout_config(
         config.show_product_image = True
         config.show_price_summary = True
         config.show_trust_badges = True
-        config.show_shipping_method = True
+        config.show_shipping_method = False
         config.country = "CO"
 
     await db.flush()

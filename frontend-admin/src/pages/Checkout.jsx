@@ -27,22 +27,19 @@ import CheckoutPreview from "../components/checkout/CheckoutPreview";
 /* ------------------------------------------------------------------ */
 const DEFAULT_BLOCKS = [
   { type: "product_card", position: 0, enabled: true },
-  { type: "offers", position: 1, enabled: true },
-  { type: "variants", position: 2, enabled: true },
-  { type: "price_summary", position: 3, enabled: true },
-  { type: "field", position: 4, enabled: true, field_key: "customer_first_name", label: "Nombre", placeholder: "Nombre", required: true, icon: "user" },
-  { type: "field", position: 5, enabled: true, field_key: "customer_last_name", label: "Apellido", placeholder: "Apellido", required: true, icon: "user" },
-  { type: "field", position: 6, enabled: true, field_key: "customer_phone", label: "Telefono", placeholder: "WhatsApp", required: true, icon: "phone", input_type: "tel" },
-  { type: "field", position: 7, enabled: true, field_key: "address", label: "Direccion", placeholder: "Calle carrera #casa", required: true, icon: "map-pin" },
-  { type: "field", position: 8, enabled: true, field_key: "address_extra", label: "Complemento direccion", placeholder: "Barrio y punto de referencia", required: false, icon: "map-pin" },
-  { type: "field", position: 9, enabled: true, field_key: "state", label: "Departamento", placeholder: "Departamento", required: true, icon: "map-pin" },
-  { type: "field", position: 10, enabled: true, field_key: "city", label: "Ciudad", placeholder: "Ciudad", required: true, icon: "map-pin" },
-  { type: "field", position: 11, enabled: true, field_key: "email", label: "Correo electronico", placeholder: "email@ejemplo.com", required: false, icon: "mail", input_type: "email" },
-  { type: "field", position: 12, enabled: true, field_key: "notes", label: "Notas adicionales", placeholder: "Indicaciones especiales para la entrega...", required: false, icon: "note", input_type: "textarea" },
-  { type: "trust_badge", position: 13, enabled: true },
-  { type: "shipping_info", position: 14, enabled: true },
-  { type: "payment_method", position: 15, enabled: true },
-  { type: "submit_button", position: 16, enabled: true },
+  { type: "variants", position: 1, enabled: true },
+  { type: "price_summary", position: 2, enabled: true },
+  { type: "field", position: 3, enabled: true, field_key: "customer_first_name", label: "Nombre", placeholder: "Nombre", required: true, icon: "user" },
+  { type: "field", position: 4, enabled: true, field_key: "customer_last_name", label: "Apellido", placeholder: "Apellido", required: true, icon: "user" },
+  { type: "field", position: 5, enabled: true, field_key: "customer_phone", label: "Telefono", placeholder: "WhatsApp", required: true, icon: "phone", input_type: "tel" },
+  { type: "field", position: 6, enabled: true, field_key: "address", label: "Direccion", placeholder: "Calle carrera #casa", required: true, icon: "map-pin" },
+  { type: "field", position: 7, enabled: true, field_key: "address_extra", label: "Complemento direccion", placeholder: "Barrio y punto de referencia", required: false, icon: "map-pin" },
+  { type: "field", position: 8, enabled: true, field_key: "state", label: "Departamento", placeholder: "Departamento", required: true, icon: "map-pin" },
+  { type: "field", position: 9, enabled: true, field_key: "city", label: "Ciudad", placeholder: "Ciudad", required: true, icon: "map-pin" },
+  { type: "field", position: 10, enabled: true, field_key: "email", label: "Correo electronico", placeholder: "email@ejemplo.com", required: false, icon: "mail", input_type: "email" },
+  { type: "field", position: 11, enabled: true, field_key: "notes", label: "Notas adicionales", placeholder: "Indicaciones especiales para la entrega...", required: false, icon: "note", input_type: "textarea" },
+  { type: "trust_badge", position: 12, enabled: true },
+  { type: "submit_button", position: 13, enabled: true },
 ];
 
 const DEFAULT_CONFIG = {
@@ -60,6 +57,8 @@ const DEFAULT_CONFIG = {
   cta_border_color: "#000000",
   cta_shadow: "lg",
   cta_sticky_mobile: true,
+  cta_subtitle_font_size: 12,
+  cta_font_family: "Inter, sans-serif",
   form_bg_color: "#FFFFFF",
   form_text_color: "#1F2937",
   form_font_size: 14,
@@ -78,7 +77,7 @@ const DEFAULT_CONFIG = {
   show_product_image: true,
   show_price_summary: true,
   show_trust_badges: true,
-  show_shipping_method: true,
+  show_shipping_method: false,
   country: "CO",
 };
 

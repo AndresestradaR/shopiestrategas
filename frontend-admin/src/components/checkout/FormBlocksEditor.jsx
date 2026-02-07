@@ -20,20 +20,23 @@ import BlockEditModal from './BlockEditModal';
 import AddBlockModal from './AddBlockModal';
 
 const BLOCK_LABELS = {
-  product_card: 'Tarjeta de producto',
-  offers: 'Ofertas por cantidad',
+  product_card: 'Imagen del producto',
   variants: 'Selector de variantes',
   price_summary: 'Resumen de precio',
   field: 'Campo',
   custom_text: 'Texto personalizado',
-  image: 'Imagen',
+  image: 'Imagen / GIF',
   divider: 'Divisor',
   spacer: 'Espaciador',
-  trust_badge: 'Sello de confianza',
-  shipping_info: 'Info de envio',
-  payment_method: 'Metodo de pago',
-  submit_button: 'Boton de envio',
+  trust_badge: 'Sellos de confianza',
+  submit_button: 'Boton de compra',
 };
+
+// Block types that cannot be deleted
+const SYSTEM_BLOCKS = ['product_card', 'variants', 'price_summary', 'submit_button'];
+
+// Block types that have been removed - filter them out of display
+const REMOVED_BLOCKS = ['offers', 'shipping_info', 'payment_method'];
 
 function SortableBlock({ block, index, onToggle, onEdit, onDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
@@ -49,7 +52,7 @@ function SortableBlock({ block, index, onToggle, onEdit, onDelete }) {
     ? `${BLOCK_LABELS.field}: ${block.label || block.field_key}`
     : BLOCK_LABELS[block.type] || block.type;
 
-  const isSystem = ['product_card', 'offers', 'variants', 'price_summary', 'submit_button'].includes(block.type);
+  const isSystem = SYSTEM_BLOCKS.includes(block.type);
 
   return (
     <div
@@ -97,8 +100,11 @@ export default function FormBlocksEditor({ blocks, onChange }) {
   const [editingIndex, setEditingIndex] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
 
+  // Filter out removed block types for display, but keep them in data for backward compat
+  const filteredBlocks = (blocks || []).filter((b) => !REMOVED_BLOCKS.includes(b.type));
+
   // Ensure each block has a stable _id for dnd-kit
-  const blocksWithIds = (blocks || []).map((b, i) => ({
+  const blocksWithIds = filteredBlocks.map((b, i) => ({
     ...b,
     _id: b._id || `block-${i}-${b.type}-${b.field_key || b.position}`,
   }));

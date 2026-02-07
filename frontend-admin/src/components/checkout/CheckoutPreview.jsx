@@ -1,13 +1,29 @@
 const BLOCK_LABELS = {
-  product_card: 'Tarjeta de producto',
-  offers: 'Ofertas por cantidad',
+  product_card: 'Imagen del producto',
   variants: 'Selector de variantes',
   price_summary: 'Resumen de precio',
-  trust_badge: 'Sello de confianza',
-  shipping_info: 'Info de envio',
-  payment_method: 'Metodo de pago',
-  submit_button: 'Boton de envio',
+  trust_badge: 'Sellos de confianza',
+  submit_button: 'Boton de compra',
 };
+
+const SHADOW_CSS = {
+  none: 'none',
+  sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+  md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+  lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+  xl: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+};
+
+const ANIM_KEYFRAMES = `
+@keyframes ck-shake { 0%,100%{transform:translateX(0)} 10%,30%,50%,70%,90%{transform:translateX(-4px)} 20%,40%,60%,80%{transform:translateX(4px)} }
+@keyframes ck-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.03)} }
+@keyframes ck-shine { 0%{background-position:-200%} 100%{background-position:200%} }
+@keyframes ck-bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+.ck-anim-shake { animation: ck-shake 2s ease-in-out infinite; }
+.ck-anim-pulse { animation: ck-pulse 2s ease-in-out infinite; }
+.ck-anim-shine { background-image:linear-gradient(90deg,transparent 40%,rgba(255,255,255,0.3) 50%,transparent 60%); background-size:200%; animation:ck-shine 3s linear infinite; }
+.ck-anim-bounce { animation: ck-bounce 1.5s ease-in-out infinite; }
+`;
 
 const ICON_MAP = {
   user: (
@@ -73,26 +89,6 @@ function PreviewBlock({ block, config }) {
         </div>
       );
 
-    case 'offers':
-      return (
-        <div className="rounded-lg bg-white p-3 shadow-sm">
-          <div className="mb-2 h-2.5 w-1/3 rounded bg-gray-200" />
-          <div className="space-y-1.5">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className={`flex items-center justify-between rounded border-2 p-2 ${i === 2 ? 'border-emerald-400 bg-emerald-50' : 'border-gray-200'}`}>
-                <div className="flex items-center gap-2">
-                  <div className={`h-3 w-3 rounded-full border-2 ${i === 2 ? 'border-emerald-400' : 'border-gray-300'}`}>
-                    {i === 2 && <div className="m-0.5 h-1 w-1 rounded-full bg-emerald-400" />}
-                  </div>
-                  <div className="h-2 w-16 rounded bg-gray-200" />
-                </div>
-                <div className="h-2.5 w-12 rounded bg-gray-200" />
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-
     case 'variants':
       return (
         <div className="rounded-lg bg-white p-3 shadow-sm">
@@ -116,7 +112,7 @@ function PreviewBlock({ block, config }) {
               <span>Subtotal</span><span>$89,900</span>
             </div>
             <div className="flex justify-between text-xs text-gray-500">
-              <span>Envio</span><span className="text-green-600 font-medium">{config.shipping_text || 'Gratis'}</span>
+              <span>Envio</span><span className="text-green-600 font-medium">Gratis</span>
             </div>
             <div className="flex justify-between border-t border-gray-100 pt-1.5 text-sm font-bold text-gray-800">
               <span>Total</span><span className="text-emerald-600">$89,900</span>
@@ -157,45 +153,67 @@ function PreviewBlock({ block, config }) {
     case 'trust_badge':
       if (!config.show_trust_badges) return null;
       return (
-        <div className="flex items-center justify-center gap-1.5 py-1 text-[10px] text-gray-400">
-          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
-          </svg>
-          {config.trust_badge_text || 'Pago seguro'}
+        <div className="flex items-center justify-center gap-3 py-1 text-[9px] text-gray-400">
+          <div className="flex items-center gap-1">
+            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75m-3-7.036A11.959 11.959 0 0 1 3.598 6 11.99 11.99 0 0 0 3 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285Z" />
+            </svg>
+            Pago seguro
+          </div>
+          <div className="flex items-center gap-1">
+            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H18.75m-7.5 0h7.5m-7.5 0-1-3m8.5 3h2.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125h-1.5m-16.5 0H1.5m16.5 0 1-3" />
+            </svg>
+            Envio gratis
+          </div>
+          <div className="flex items-center gap-1">
+            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" />
+            </svg>
+            Contraentrega
+          </div>
         </div>
       );
 
+    // Backward compat: don't render removed block types
+    case 'offers':
     case 'shipping_info':
-      if (!config.show_shipping_method) return null;
-      return (
-        <div className="flex items-center justify-center gap-1.5 py-0.5 text-[10px] text-gray-400">
-          {config.shipping_text || 'Envio gratis'}
-        </div>
-      );
-
     case 'payment_method':
+      return null;
+
+    case 'submit_button': {
+      if (config.cta_sticky) return null;
+      const animation = config.cta_animation || 'none';
+      const animClass = animation !== 'none' ? `ck-anim-${animation}` : '';
       return (
-        <div className="flex items-center justify-center gap-1.5 py-0.5 text-[10px] text-gray-400">
-          {config.payment_method_text || 'Pago contraentrega'}
+        <div className={animClass}>
+          <button
+            type="button"
+            style={{
+              backgroundColor: config.cta_bg_color,
+              color: config.cta_text_color,
+              fontSize: `${Math.max(config.cta_font_size * 0.65, 10)}px`,
+              fontFamily: config.cta_font_family || 'Inter, sans-serif',
+              borderRadius: `${config.cta_border_radius}px`,
+              borderWidth: `${config.cta_border_width}px`,
+              borderColor: config.cta_border_color,
+              borderStyle: config.cta_border_width > 0 ? 'solid' : 'none',
+              boxShadow: SHADOW_CSS[config.cta_shadow] || SHADOW_CSS.lg,
+            }}
+            className="w-full py-2 font-bold"
+          >
+            <span className="flex flex-col items-center">
+              <span>{(config.cta_text || 'Completar pedido').replace('{order_total}', '$89,900')}</span>
+              {config.cta_subtitle && (
+                <span className="mt-0.5 font-normal opacity-90" style={{ fontSize: `${Math.max((config.cta_subtitle_font_size || 12) * 0.65, 8)}px` }}>
+                  {config.cta_subtitle}
+                </span>
+              )}
+            </span>
+          </button>
         </div>
       );
-
-    case 'submit_button':
-      if (config.cta_sticky) return null;
-      return (
-        <button
-          type="button"
-          style={{
-            backgroundColor: config.cta_bg_color,
-            color: config.cta_text_color,
-            fontSize: `${Math.max(config.cta_font_size * 0.65, 10)}px`,
-            borderRadius: `${config.cta_border_radius}px`,
-          }}
-          className="w-full py-2 font-bold"
-        >
-          {(config.cta_text || 'Completar pedido').replace('{order_total}', '$89,900')}
-        </button>
-      );
+    }
 
     default:
       return null;
@@ -204,6 +222,9 @@ function PreviewBlock({ block, config }) {
 
 export default function CheckoutPreview({ config }) {
   const blocks = [...(config.form_blocks || [])].filter((b) => b.enabled).sort((a, b) => a.position - b.position);
+
+  const animation = config.cta_animation || 'none';
+  const stickyAnimClass = animation !== 'none' ? `ck-anim-${animation}` : '';
 
   // Group consecutive fields
   const groups = [];
@@ -225,6 +246,7 @@ export default function CheckoutPreview({ config }) {
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <style>{ANIM_KEYFRAMES}</style>
       <h3 className="mb-3 text-base font-semibold text-gray-900">Vista previa</h3>
       {/* Phone frame */}
       <div className="mx-auto w-[375px] overflow-hidden rounded-[2rem] border-[3px] border-gray-800 bg-gray-50 shadow-xl">
@@ -279,24 +301,32 @@ export default function CheckoutPreview({ config }) {
         {/* Sticky CTA */}
         {config.cta_sticky && (
           <div className="border-t border-gray-200 bg-white px-3 pb-3 pt-2">
-            <button
-              type="button"
-              style={{
-                backgroundColor: config.cta_bg_color,
-                color: config.cta_text_color,
-                fontSize: `${Math.max(config.cta_font_size * 0.7, 10)}px`,
-                borderRadius: `${config.cta_border_radius}px`,
-                borderWidth: `${config.cta_border_width}px`,
-                borderColor: config.cta_border_color,
-                borderStyle: config.cta_border_width > 0 ? 'solid' : 'none',
-              }}
-              className="w-full py-2.5 font-bold shadow-lg"
-            >
-              {(config.cta_text || 'Completar pedido').replace('{order_total}', '$89,900')}
-            </button>
-            {config.cta_subtitle && (
-              <p className="mt-1 text-center text-[9px] text-gray-400">{config.cta_subtitle}</p>
-            )}
+            <div className={stickyAnimClass}>
+              <button
+                type="button"
+                style={{
+                  backgroundColor: config.cta_bg_color,
+                  color: config.cta_text_color,
+                  fontSize: `${Math.max(config.cta_font_size * 0.7, 10)}px`,
+                  fontFamily: config.cta_font_family || 'Inter, sans-serif',
+                  borderRadius: `${config.cta_border_radius}px`,
+                  borderWidth: `${config.cta_border_width}px`,
+                  borderColor: config.cta_border_color,
+                  borderStyle: config.cta_border_width > 0 ? 'solid' : 'none',
+                  boxShadow: SHADOW_CSS[config.cta_shadow] || SHADOW_CSS.lg,
+                }}
+                className="w-full py-2.5 font-bold"
+              >
+                <span className="flex flex-col items-center">
+                  <span>{(config.cta_text || 'Completar pedido').replace('{order_total}', '$89,900')}</span>
+                  {config.cta_subtitle && (
+                    <span className="mt-0.5 font-normal opacity-90" style={{ fontSize: `${Math.max((config.cta_subtitle_font_size || 12) * 0.7, 8)}px` }}>
+                      {config.cta_subtitle}
+                    </span>
+                  )}
+                </span>
+              </button>
+            </div>
           </div>
         )}
       </div>

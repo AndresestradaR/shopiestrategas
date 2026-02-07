@@ -1,0 +1,39 @@
+/* Shared CTA button animations */
+@keyframes ck-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+@keyframes ck-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
+@keyframes ck-shine {
+  0% { background-position: -200%; }
+  100% { background-position: 200%; }
+}
+
+@keyframes ck-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.ck-anim-shake {
+  animation: ck-shake 2s ease-in-out infinite;
+}
+
+.ck-anim-pulse {
+  animation: ck-pulse 2s ease-in-out infinite;
+}
+
+.ck-anim-shine {
+  background-image: linear-gradient(90deg, transparent 40%, rgba(255, 255, 255, 0.3) 50%, transparent 60%);
+  background-size: 200%;
+  animation: ck-shine 3s linear infinite;
+}
+
+.ck-anim-bounce {
+  animation: ck-bounce 1.5s ease-in-out infinite;
+}

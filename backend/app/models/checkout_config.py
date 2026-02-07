@@ -28,6 +28,8 @@ class CheckoutConfig(Base):
     cta_border_color: Mapped[str] = mapped_column(String(9), default="#000000")
     cta_shadow: Mapped[str] = mapped_column(String(50), default="lg")
     cta_sticky_mobile: Mapped[bool] = mapped_column(Boolean, default=True)
+    cta_subtitle_font_size: Mapped[int] = mapped_column(Integer, default=12)
+    cta_font_family: Mapped[str] = mapped_column(String(100), default="Inter, sans-serif")
 
     # Form style fields
     form_bg_color: Mapped[str] = mapped_column(String(9), default="#FFFFFF")

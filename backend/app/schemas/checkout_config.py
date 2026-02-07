@@ -20,6 +20,8 @@ class CheckoutConfigResponse(BaseModel):
     cta_border_color: str
     cta_shadow: str
     cta_sticky_mobile: bool
+    cta_subtitle_font_size: int
+    cta_font_family: str
     form_bg_color: str
     form_text_color: str
     form_font_size: int
@@ -61,6 +63,8 @@ class CheckoutConfigUpdate(BaseModel):
     cta_border_color: str | None = None
     cta_shadow: str | None = None
     cta_sticky_mobile: bool | None = None
+    cta_subtitle_font_size: int | None = None
+    cta_font_family: str | None = None
     form_bg_color: str | None = None
     form_text_color: str | None = None
     form_font_size: int | None = None

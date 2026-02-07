@@ -25,36 +25,6 @@ export default function TextsEditor({ config, onChange }) {
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
           />
         </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Texto de envio</label>
-          <input
-            type="text"
-            value={config.shipping_text || ''}
-            onChange={(e) => update('shipping_text', e.target.value)}
-            placeholder="Envio gratis"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Texto de metodo de pago</label>
-          <input
-            type="text"
-            value={config.payment_method_text || ''}
-            onChange={(e) => update('payment_method_text', e.target.value)}
-            placeholder="Pago contraentrega"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Texto del sello de confianza</label>
-          <input
-            type="text"
-            value={config.trust_badge_text || ''}
-            onChange={(e) => update('trust_badge_text', e.target.value)}
-            placeholder="Pago seguro contraentrega"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
-          />
-        </div>
       </div>
     </div>
   );
