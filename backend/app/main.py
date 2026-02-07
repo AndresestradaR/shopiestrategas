@@ -125,6 +125,33 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"[migrate] quantity_offer_tiers hide_compare_price: {e}")
 
+    try:
+        async with engine.begin() as conn:
+            # add label_top_position, label_inner_* to quantity_offer_tiers
+            result = await conn.execute(text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_schema = 'minishop' AND table_name = 'quantity_offer_tiers' AND column_name = 'label_top_position'"
+            ))
+            if not result.fetchone():
+                await conn.execute(text(
+                    "ALTER TABLE minishop.quantity_offer_tiers "
+                    "ADD COLUMN label_top_position VARCHAR(10) DEFAULT 'left'"
+                ))
+                await conn.execute(text(
+                    "ALTER TABLE minishop.quantity_offer_tiers "
+                    "ADD COLUMN label_inner_text VARCHAR(100)"
+                ))
+                await conn.execute(text(
+                    "ALTER TABLE minishop.quantity_offer_tiers "
+                    "ADD COLUMN label_inner_bg_color VARCHAR(50) DEFAULT '#6B7280'"
+                ))
+                await conn.execute(text(
+                    "ALTER TABLE minishop.quantity_offer_tiers "
+                    "ADD COLUMN label_inner_text_color VARCHAR(50) DEFAULT '#FFFFFF'"
+                ))
+    except Exception as e:
+        print(f"[migrate] quantity_offer_tiers inner_label: {e}")
+
     yield
 
 

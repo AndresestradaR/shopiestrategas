@@ -348,10 +348,10 @@ function QuantityOfferPreview({ offer, tiers, basePrice: basePriceProp, productI
                 boxShadow: isSelected ? `0 0 0 1px ${offer.selected_border_color || '#059669'}` : 'none',
               }}
             >
-              {/* Label badge */}
+              {/* Top label badge */}
               {tier.label_text && (
                 <span
-                  className="absolute -top-2 left-2 rounded-full px-1.5 py-0 text-[8px] font-bold"
+                  className={`absolute -top-2 ${(tier.label_top_position === 'right') ? 'right-2' : 'left-2'} rounded-full px-1.5 py-0 text-[8px] font-bold`}
                   style={{ backgroundColor: tier.label_bg_color || '#F59E0B', color: tier.label_text_color || '#FFFFFF' }}
                 >
                   {tier.label_text}
@@ -373,11 +373,19 @@ function QuantityOfferPreview({ offer, tiers, basePrice: basePriceProp, productI
                 <img src={tierImage} alt="" className="h-10 w-10 shrink-0 rounded object-cover" />
               )}
 
-              {/* Title + per unit */}
+              {/* Title + inner label + per unit */}
               <div className="flex-1 min-w-0">
                 <span className="text-[11px] font-bold text-gray-800 leading-tight block">
                   {tier.title || `${tier.quantity} ${tier.quantity === 1 ? 'unidad' : 'unidades'}`}
                 </span>
+                {tier.label_inner_text && (
+                  <span
+                    className="mt-0.5 inline-block rounded-full px-1.5 py-0 text-[7px] font-bold"
+                    style={{ backgroundColor: tier.label_inner_bg_color || '#6B7280', color: tier.label_inner_text_color || '#FFFFFF' }}
+                  >
+                    {tier.label_inner_text}
+                  </span>
+                )}
                 {offer.show_per_unit && (
                   <div className="text-[9px] text-gray-400">
                     ${Math.round(discounted).toLocaleString('es-CO')} c/u
@@ -477,8 +485,9 @@ export default function CheckoutPreview({ config, quantityOffer = null, productI
       // Skip old 'offers' block type
       if (block.type === 'offers') continue;
 
-      // Hide product_card when quantity offer is active (tiers show product image)
+      // Hide product_card and variants when quantity offer is active
       if (block.type === 'product_card' && hasOffer) continue;
+      if (block.type === 'variants' && hasOffer) continue;
 
       groups.push(block);
     }

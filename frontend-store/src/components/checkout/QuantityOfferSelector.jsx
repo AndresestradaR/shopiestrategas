@@ -72,10 +72,10 @@ export default function QuantityOfferSelector({
                 boxShadow: isSelected ? `0 0 0 1px ${offer.selected_border_color || 'var(--color-primary)'}` : 'none',
               }}
             >
-              {/* Label badge */}
+              {/* Top label badge */}
               {tier.label_text && (
                 <span
-                  className="absolute -top-2.5 left-3 rounded-full px-2.5 py-0.5 text-[10px] font-bold"
+                  className={`absolute -top-2.5 ${tier.label_top_position === 'right' ? 'right-3' : 'left-3'} rounded-full px-2.5 py-0.5 text-[10px] font-bold`}
                   style={{
                     backgroundColor: tier.label_bg_color || '#F59E0B',
                     color: tier.label_text_color || '#FFFFFF',
@@ -112,11 +112,22 @@ export default function QuantityOfferSelector({
                   />
                 )}
 
-                {/* Title + per unit */}
+                {/* Title + inner label + per unit */}
                 <div>
                   <span className="font-bold text-gray-800">
                     {tier.title || `${tier.quantity} ${tier.quantity === 1 ? 'unidad' : 'unidades'}`}
                   </span>
+                  {tier.label_inner_text && (
+                    <span
+                      className="mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-bold"
+                      style={{
+                        backgroundColor: tier.label_inner_bg_color || '#6B7280',
+                        color: tier.label_inner_text_color || '#FFFFFF',
+                      }}
+                    >
+                      {tier.label_inner_text}
+                    </span>
+                  )}
                   {offer.show_per_unit && (
                     <div className="text-xs text-gray-400">
                       {formatPrice(discounted, currency, country)} c/u

@@ -102,6 +102,10 @@ class QuantityOfferTierCreate(BaseModel):
     label_text: str | None = None
     label_bg_color: str = "#F59E0B"
     label_text_color: str = "#FFFFFF"
+    label_top_position: str = "left"
+    label_inner_text: str | None = None
+    label_inner_bg_color: str = "#6B7280"
+    label_inner_text_color: str = "#FFFFFF"
     price_color: str = "#059669"
     hide_compare_price: bool = False
     image_url: str | None = None
@@ -119,6 +123,10 @@ class QuantityOfferTierResponse(BaseModel):
     label_text: str | None = None
     label_bg_color: str
     label_text_color: str
+    label_top_position: str = "left"
+    label_inner_text: str | None = None
+    label_inner_bg_color: str = "#6B7280"
+    label_inner_text_color: str = "#FFFFFF"
     price_color: str
     hide_compare_price: bool = False
     image_url: str | None = None

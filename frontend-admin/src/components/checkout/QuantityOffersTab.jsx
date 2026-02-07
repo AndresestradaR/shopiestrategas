@@ -35,9 +35,9 @@ const PALETTES = [
 ];
 
 const DEFAULT_TIERS = [
-  { title: "1 unidad", quantity: 1, position: 0, is_preselected: false, discount_type: "percentage", discount_value: 0, label_text: null, label_bg_color: "#F59E0B", label_text_color: "#FFFFFF", price_color: "#059669", hide_compare_price: false, image_url: null },
-  { title: "2 unidades", quantity: 2, position: 1, is_preselected: true, discount_type: "percentage", discount_value: 10, label_text: "Mas popular", label_bg_color: "#F59E0B", label_text_color: "#FFFFFF", price_color: "#059669", hide_compare_price: false, image_url: null },
-  { title: "3 unidades", quantity: 3, position: 2, is_preselected: false, discount_type: "percentage", discount_value: 20, label_text: "Mejor oferta", label_bg_color: "#059669", label_text_color: "#FFFFFF", price_color: "#059669", hide_compare_price: false, image_url: null },
+  { title: "1 unidad", quantity: 1, position: 0, is_preselected: false, discount_type: "percentage", discount_value: 0, label_text: null, label_bg_color: "#F59E0B", label_text_color: "#FFFFFF", label_top_position: "left", label_inner_text: null, label_inner_bg_color: "#6B7280", label_inner_text_color: "#FFFFFF", price_color: "#059669", hide_compare_price: false, image_url: null },
+  { title: "2 unidades", quantity: 2, position: 1, is_preselected: true, discount_type: "percentage", discount_value: 10, label_text: "Mas popular", label_bg_color: "#F59E0B", label_text_color: "#FFFFFF", label_top_position: "left", label_inner_text: "Ahorra 10%", label_inner_bg_color: "#2563EB", label_inner_text_color: "#FFFFFF", price_color: "#059669", hide_compare_price: false, image_url: null },
+  { title: "3 unidades", quantity: 3, position: 2, is_preselected: false, discount_type: "percentage", discount_value: 20, label_text: "Mejor oferta", label_bg_color: "#059669", label_text_color: "#FFFFFF", label_top_position: "left", label_inner_text: "Ahorra 20%", label_inner_bg_color: "#059669", label_inner_text_color: "#FFFFFF", price_color: "#059669", hide_compare_price: false, image_url: null },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -379,37 +379,78 @@ function TierCard({ tier, index, onChange, onDelete, expanded, onToggleExpand })
             </div>
           </div>
 
-          {/* Precio color + Texto de la etiqueta */}
-          <div className="grid grid-cols-2 gap-3">
-            <RgbaColorInput
-              label="Precio color"
-              value={tier.price_color}
-              onChange={(v) => update("price_color", v)}
-            />
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Texto de la etiqueta</label>
-              <input
-                type="text"
-                value={tier.label_text || ""}
-                onChange={(e) => update("label_text", e.target.value || null)}
-                placeholder="Ej: Ahorra 25%"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
+          {/* Precio color */}
+          <RgbaColorInput
+            label="Precio color"
+            value={tier.price_color}
+            onChange={(v) => update("price_color", v)}
+          />
+
+          {/* Etiqueta superior */}
+          <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-3 space-y-3">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Etiqueta superior</p>
+            <div className="grid grid-cols-[1fr_120px] gap-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Texto</label>
+                <input
+                  type="text"
+                  value={tier.label_text || ""}
+                  onChange={(e) => update("label_text", e.target.value || null)}
+                  placeholder="Ej: Mas popular"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">Posicion</label>
+                <select
+                  value={tier.label_top_position || "left"}
+                  onChange={(e) => update("label_top_position", e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
+                >
+                  <option value="left">Izquierda</option>
+                  <option value="right">Derecha</option>
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <RgbaColorInput
+                label="Color del texto"
+                value={tier.label_text_color}
+                onChange={(v) => update("label_text_color", v)}
+              />
+              <RgbaColorInput
+                label="Color del fondo"
+                value={tier.label_bg_color}
+                onChange={(v) => update("label_bg_color", v)}
               />
             </div>
           </div>
 
-          {/* Color texto etiqueta + Color fondo etiqueta */}
-          <div className="grid grid-cols-2 gap-3">
-            <RgbaColorInput
-              label="Color del texto de la etiqueta"
-              value={tier.label_text_color}
-              onChange={(v) => update("label_text_color", v)}
-            />
-            <RgbaColorInput
-              label="Color del fondo de la etiqueta"
-              value={tier.label_bg_color}
-              onChange={(v) => update("label_bg_color", v)}
-            />
+          {/* Etiqueta interna */}
+          <div className="rounded-lg border border-gray-200 bg-gray-50/50 p-3 space-y-3">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Etiqueta interna</p>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">Texto</label>
+              <input
+                type="text"
+                value={tier.label_inner_text || ""}
+                onChange={(e) => update("label_inner_text", e.target.value || null)}
+                placeholder="Ej: Ahorra 25%"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <RgbaColorInput
+                label="Color del texto"
+                value={tier.label_inner_text_color}
+                onChange={(v) => update("label_inner_text_color", v)}
+              />
+              <RgbaColorInput
+                label="Color del fondo"
+                value={tier.label_inner_bg_color}
+                onChange={(v) => update("label_inner_bg_color", v)}
+              />
+            </div>
           </div>
 
           {/* URL de la imagen */}
@@ -483,6 +524,10 @@ function OfferEditor({ offer, onBack, onSaved, checkoutConfig }) {
         label_text: t.label_text,
         label_bg_color: t.label_bg_color,
         label_text_color: t.label_text_color,
+        label_top_position: t.label_top_position || "left",
+        label_inner_text: t.label_inner_text,
+        label_inner_bg_color: t.label_inner_bg_color || "#6B7280",
+        label_inner_text_color: t.label_inner_text_color || "#FFFFFF",
         price_color: t.price_color,
         hide_compare_price: t.hide_compare_price || false,
         image_url: t.image_url,
@@ -524,6 +569,10 @@ function OfferEditor({ offer, onBack, onSaved, checkoutConfig }) {
         label_text: null,
         label_bg_color: "#F59E0B",
         label_text_color: "#FFFFFF",
+        label_top_position: "left",
+        label_inner_text: null,
+        label_inner_bg_color: "#6B7280",
+        label_inner_text_color: "#FFFFFF",
         price_color: "#059669",
         hide_compare_price: false,
         image_url: null,
