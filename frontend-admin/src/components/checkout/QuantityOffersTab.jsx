@@ -24,7 +24,9 @@ const getImageUrl = (imgUrl) => {
   if (!imgUrl) return null;
   if (imgUrl.startsWith('http')) return imgUrl;
   const apiBase = import.meta.env.VITE_API_URL || '';
-  return `${apiBase}${imgUrl}`;
+  if (apiBase) return `${apiBase}${imgUrl}`;
+  // No API base URL (same-domain proxy): route through /api prefix
+  return imgUrl.replace(/^\/uploads/, '/api/uploads');
 };
 
 /* ------------------------------------------------------------------ */
@@ -719,7 +721,7 @@ function OfferEditor({ offer, onBack, onSaved, checkoutConfig }) {
                       return (
                         <div key={p.id} className="flex items-center gap-2.5 rounded-lg bg-gray-50 px-3 py-2">
                           {imgUrl ? (
-                            <img src={imgUrl} alt={p.name} className="h-8 w-8 rounded object-cover border border-gray-200" />
+                            <img src={getImageUrl(imgUrl)} alt={p.name} className="h-8 w-8 rounded object-cover border border-gray-200" />
                           ) : (
                             <div className="flex h-8 w-8 items-center justify-center rounded bg-gray-200">
                               <Package size={14} className="text-gray-400" />

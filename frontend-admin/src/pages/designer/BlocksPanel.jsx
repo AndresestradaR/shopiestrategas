@@ -106,7 +106,7 @@ function UploadPanel({ editor }) {
           });
           const imageUrl = res.data.url;
           const fullUrl = imageUrl.startsWith("/")
-            ? `${API_BASE_URL}${imageUrl}`
+            ? (API_BASE_URL ? `${API_BASE_URL}${imageUrl}` : imageUrl.replace(/^\/uploads/, '/api/uploads'))
             : imageUrl;
           setImages((prev) => [fullUrl, ...prev]);
         }

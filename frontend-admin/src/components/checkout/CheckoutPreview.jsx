@@ -1,5 +1,13 @@
 import { useEffect } from 'react';
 
+const getImageUrl = (imgUrl) => {
+  if (!imgUrl) return null;
+  if (imgUrl.startsWith('http')) return imgUrl;
+  const apiBase = import.meta.env.VITE_API_URL || '';
+  if (apiBase) return `${apiBase}${imgUrl}`;
+  return imgUrl.replace(/^\/uploads/, '/api/uploads');
+};
+
 const GOOGLE_FONT_MAP = {
   'Inter, sans-serif': 'Inter',
   'Poppins, sans-serif': 'Poppins',
@@ -128,7 +136,7 @@ function PreviewBlock({ block, config }) {
       return (
         <div className="flex gap-3 rounded-lg bg-white p-4 shadow-sm">
           {config._productImage ? (
-            <img src={config._productImage} alt="" className="h-16 w-16 flex-shrink-0 rounded-lg object-cover" />
+            <img src={getImageUrl(config._productImage)} alt="" className="h-16 w-16 flex-shrink-0 rounded-lg object-cover" />
           ) : (
             <div className="h-16 w-16 flex-shrink-0 rounded-lg bg-gray-200" />
           )}
@@ -326,7 +334,7 @@ function QuantityOfferPreview({ offer, tiers, basePrice: basePriceProp, productI
           const originalTotal = price * tier.quantity;
           const savings = originalTotal - total;
           const hasDiscount = savings > 0;
-          const tierImage = tier.image_url || (showImage ? productImage : null);
+          const tierImage = getImageUrl(tier.image_url) || (showImage ? productImage : null);
 
           return (
             <div

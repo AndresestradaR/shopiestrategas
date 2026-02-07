@@ -39,7 +39,8 @@ const getImageUrl = (imgUrl) => {
   if (!imgUrl) return '';
   if (imgUrl.startsWith('http')) return imgUrl;
   const apiBase = import.meta.env.VITE_API_URL || '';
-  return `${apiBase}${imgUrl}`;
+  if (apiBase) return `${apiBase}${imgUrl}`;
+  return imgUrl.replace(/^\/uploads/, '/api/uploads');
 };
 
 // Rich Text Editor - uses contentEditable + execCommand for lightweight formatting.

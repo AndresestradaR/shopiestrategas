@@ -185,6 +185,8 @@ app.include_router(checkout_config_router)
 # Mount uploads directory for serving static files
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads")
+# Also mount under /api/uploads so images work through /api reverse proxies
+app.mount("/api/uploads", StaticFiles(directory=settings.UPLOAD_DIR), name="uploads-api")
 
 
 @app.get("/api/health")
