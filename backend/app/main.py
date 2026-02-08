@@ -22,6 +22,7 @@ from app.api.admin.page_designs import router as page_designs_router
 from app.api.admin.checkout_config import router as checkout_config_router
 from app.api.admin.upsells import router as upsells_router
 from app.api.admin.ai import router as ai_router
+from app.api.admin.upsell_ticks import router as upsell_ticks_router
 from app.api.store.pages import router as store_pages_router
 from app.config import settings
 from app.database import Base, engine
@@ -200,6 +201,7 @@ app.include_router(store_pages_router)
 app.include_router(checkout_config_router)
 app.include_router(upsells_router)
 app.include_router(ai_router)
+app.include_router(upsell_ticks_router)
 
 # Mount uploads directory for local dev (when R2 is not configured, images are served from disk)
 from app.services.storage import is_r2_configured  # noqa: E402

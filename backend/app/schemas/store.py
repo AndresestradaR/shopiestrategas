@@ -329,3 +329,69 @@ class StoreUpsellResponse(BaseModel):
     upsells: list[UpsellResponse]
 
     model_config = {"from_attributes": True}
+
+
+# ── Upsell 1-Tick schemas ──────────────────────────────────────────
+
+class UpsellTickCreate(BaseModel):
+    name: str = "Nuevo upsell"
+    is_active: bool = True
+    priority: int = 0
+    trigger_type: str = "all"
+    trigger_product_ids: list[str] | None = None
+    link_product: bool = False
+    linked_product_id: str | None = None
+    upsell_title: str = "Nombre Oferta"
+    upsell_price: float = 0
+    checkbox_text: str = "Agrega {title} por solo {price}"
+    description_text: str = ""
+    preselected: bool = False
+    image_url: str | None = None
+    text_color: str = "rgba(0,0,0,1)"
+    description_color: str = "rgba(89,89,89,1)"
+    bg_color: str = "rgba(217,235,246,1)"
+    border_style: str = "solid"
+    border_width: int = 1
+    border_color: str = "rgba(0,116,191,1)"
+    border_radius: int = 8
+
+
+class UpsellTickProductInfo(BaseModel):
+    id: uuid.UUID
+    name: str
+    price: float
+    image_url: str | None = None
+
+    model_config = {"from_attributes": True}
+
+
+class UpsellTickResponse(BaseModel):
+    id: uuid.UUID
+    tenant_id: uuid.UUID
+    name: str
+    is_active: bool
+    priority: int
+    trigger_type: str
+    trigger_product_ids: list | None = None
+    link_product: bool
+    linked_product_id: uuid.UUID | None = None
+    upsell_title: str
+    upsell_price: float
+    checkbox_text: str
+    description_text: str
+    preselected: bool
+    image_url: str | None = None
+    text_color: str
+    description_color: str
+    bg_color: str
+    border_style: str
+    border_width: int
+    border_color: str
+    border_radius: int
+    impressions: int
+    accepted_count: int
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    linked_product: UpsellTickProductInfo | None = None
+
+    model_config = {"from_attributes": True}

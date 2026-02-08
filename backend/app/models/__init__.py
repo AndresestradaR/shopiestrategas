@@ -12,6 +12,7 @@ from app.models.store_visit import StoreVisit
 from app.models.page_design import PageDesign  # noqa: F401
 from app.models.checkout_config import CheckoutConfig
 from app.models.upsell import UpsellConfig, Upsell
+from app.models.upsell_tick import UpsellTick
 
 __all__ = [
     "Tenant",
@@ -34,4 +35,5 @@ __all__ = [
     "CheckoutConfig",
     "UpsellConfig",
     "Upsell",
+    "UpsellTick",
 ]

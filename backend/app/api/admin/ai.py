@@ -96,6 +96,8 @@ async def generate_upsell_text(
         "title": f"Escribe un titulo de upsell popup (max 10 palabras). El cliente esta comprando '{data.product_name}' y le ofreces '{data.upsell_product_name}'. El titulo debe hacer que el cliente sienta que NECESITA este producto adicional. Puedes usar {{product_name}} para insertar el nombre del producto upsell y {{first_name}} para el nombre del cliente.",
         "subtitle": f"Escribe un subtitulo corto (max 15 palabras) para un popup de upsell. El cliente compra '{data.product_name}' y le ofreces '{data.upsell_product_name}'. El subtitulo debe reforzar la urgencia o el beneficio.",
         "description": f"Escribe una descripcion muy corta (2-3 oraciones) del producto '{data.upsell_product_name}' como upsell. {'Descripcion actual: ' + data.upsell_product_description if data.upsell_product_description else ''} Enfócate en los dolores del cliente que este producto resuelve y en cómo complementa a '{data.product_name}'. Menciona ahorro o beneficio concreto.",
+        "tick_checkbox": f"Escribe un texto corto (max 10 palabras) para el checkbox de un upsell en el checkout. El upsell se llama '{data.upsell_product_name}'. Debe ser una frase persuasiva que haga al cliente querer marcar la casilla. Puedes usar {{{{title}}}} para insertar el titulo y {{{{price}}}} para el precio.",
+        "tick_description": f"Escribe una descripcion MUY corta (1 oracion, max 12 palabras) de por que el cliente deberia agregar '{data.upsell_product_name}' a su pedido. Debe generar urgencia o resaltar el beneficio.",
     }
 
     user_prompt = field_instructions.get(data.field)

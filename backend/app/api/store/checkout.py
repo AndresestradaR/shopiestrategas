@@ -15,14 +15,20 @@ from app.models.order import Order, OrderItem
 from app.models.product import Product
 from app.models.tenant import Tenant
 from app.models.upsell import Upsell, UpsellConfig
+from app.models.upsell_tick import UpsellTick
 
 router = APIRouter(prefix="/api/store", tags=["store-checkout"])
 
 
 class OrderItemCreate(BaseModel):
-    product_id: uuid.UUID
+    product_id: uuid.UUID | None = None
     variant_id: uuid.UUID | None = None
     quantity: int = 1
+    # Upsell tick fields (inline checkbox items)
+    upsell_tick_id: uuid.UUID | None = None
+    is_upsell_tick: bool = False
+    tick_name: str | None = None
+    tick_price: float | None = None
 
 
 class OrderCreate(BaseModel):
@@ -89,7 +95,42 @@ async def create_order(slug: str, data: OrderCreate, db: AsyncSession = Depends(
     )
     all_offers = offers_result.scalars().all()
 
+    tick_ids_accepted = []
+
     for item_data in data.items:
+        # Handle upsell tick items (inline checkbox add-ons)
+        if item_data.is_upsell_tick and item_data.upsell_tick_id:
+            tick_price = float(item_data.tick_price or 0)
+            tick_name = item_data.tick_name or "Complemento"
+            subtotal += tick_price
+
+            # If tick has a linked product, use its real product_id
+            product_id = None
+            product_name = tick_name
+            dropi_pid = None
+            if item_data.product_id:
+                p_result = await db.execute(
+                    select(Product).where(Product.id == item_data.product_id, Product.tenant_id == tenant.id)
+                )
+                linked = p_result.scalar_one_or_none()
+                if linked:
+                    product_id = linked.id
+                    product_name = linked.name
+                    dropi_pid = linked.dropi_product_id
+
+            order_items.append(OrderItem(
+                tenant_id=tenant.id,
+                product_id=product_id,
+                product_name=product_name,
+                quantity=1,
+                unit_price=tick_price,
+                total_price=tick_price,
+                dropi_product_id=dropi_pid,
+            ))
+            tick_ids_accepted.append(item_data.upsell_tick_id)
+            continue
+
+        # Regular product items
         result = await db.execute(
             select(Product)
             .where(Product.id == item_data.product_id, Product.tenant_id == tenant.id, Product.is_active == True)
@@ -119,7 +160,6 @@ async def create_order(slug: str, data: OrderCreate, db: AsyncSession = Depends(
                 break
 
         if matched_offer and matched_offer.tiers:
-            # Find the matching tier by quantity
             matched_tier = None
             for tier in sorted(matched_offer.tiers, key=lambda t: t.quantity, reverse=True):
                 if item_data.quantity >= tier.quantity:
@@ -130,7 +170,6 @@ async def create_order(slug: str, data: OrderCreate, db: AsyncSession = Depends(
                     unit_price = unit_price * (1 - float(matched_tier.discount_value) / 100)
                 elif matched_tier.discount_type == "fixed":
                     unit_price = max(0, unit_price - float(matched_tier.discount_value))
-            # Increment orders_count
             matched_offer.orders_count = (matched_offer.orders_count or 0) + 1
 
         total_price = unit_price * item_data.quantity
@@ -209,6 +248,17 @@ async def create_order(slug: str, data: OrderCreate, db: AsyncSession = Depends(
             last_order_at=datetime.now(timezone.utc),
         )
         db.add(customer)
+
+    # Increment accepted_count for any upsell ticks
+    if tick_ids_accepted:
+        tick_result = await db.execute(
+            select(UpsellTick).where(
+                UpsellTick.id.in_(tick_ids_accepted),
+                UpsellTick.tenant_id == tenant.id,
+            )
+        )
+        for tick in tick_result.scalars():
+            tick.accepted_count = (tick.accepted_count or 0) + 1
 
     return OrderCreatedResponse(order_id=order.id, order_number=order_number)
 
@@ -431,6 +481,57 @@ async def add_upsell_item(
     await db.flush()
 
     return {"status": "ok", "item_total": total_price, "new_order_total": float(order.total)}
+
+
+@router.get("/{slug}/upsell-ticks/{product_id}")
+async def get_upsell_ticks_for_product(
+    slug: str,
+    product_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Return active upsell-ticks that apply to the given product."""
+    tenant = await _get_tenant_by_slug(slug, db)
+
+    result = await db.execute(
+        select(UpsellTick)
+        .where(UpsellTick.tenant_id == tenant.id, UpsellTick.is_active == True)
+        .order_by(UpsellTick.priority.desc(), UpsellTick.created_at.desc())
+    )
+    all_ticks = result.scalars().all()
+
+    pid_str = str(product_id)
+    matched = []
+    for t in all_ticks:
+        if t.trigger_type == "all":
+            matched.append(t)
+        elif t.trigger_type == "specific":
+            pids = [str(p) for p in (t.trigger_product_ids or [])]
+            if pid_str in pids:
+                matched.append(t)
+
+    # Enrich with linked product info
+    enriched = []
+    for t in matched:
+        data = {c.name: getattr(t, c.name) for c in t.__table__.columns}
+        data["linked_product"] = None
+        if t.link_product and t.linked_product_id:
+            p_result = await db.execute(
+                select(Product)
+                .where(Product.id == t.linked_product_id, Product.is_active == True)
+                .options(selectinload(Product.images))
+            )
+            product = p_result.scalar_one_or_none()
+            if product:
+                img = product.images[0].image_url if product.images else None
+                data["linked_product"] = {
+                    "id": product.id,
+                    "name": product.name,
+                    "price": float(product.price),
+                    "image_url": img,
+                }
+        enriched.append(data)
+
+    return enriched
 
 
 @router.post("/{slug}/upsells/{upsell_id}/impression")
