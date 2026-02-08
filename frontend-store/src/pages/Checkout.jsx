@@ -10,6 +10,7 @@ import { mergeConfig } from '../components/checkout/defaults';
 import CheckoutBlockRenderer from '../components/checkout/CheckoutBlockRenderer';
 import CheckoutStickyButton from '../components/checkout/CheckoutStickyButton';
 import UpsellPopup from '../components/checkout/UpsellPopup';
+import UpsellTickSelector from '../components/checkout/UpsellTickSelector';
 
 const getImageUrl = (imgUrl) => {
   if (!imgUrl) return '';
@@ -44,6 +45,8 @@ export default function Checkout() {
   // Upsell state
   const [showUpsell, setShowUpsell] = useState(false);
   const [pendingOrderId, setPendingOrderId] = useState(null);
+  // Upsell tick items selected by customer
+  const [selectedTickItems, setSelectedTickItems] = useState([]);
 
   const product = products?.find((p) => p.slug === productSlug);
   const currency = config?.currency || 'COP';
@@ -200,6 +203,7 @@ export default function Checkout() {
         quantity,
       },
       ...extraItems,
+      ...selectedTickItems,
     ];
     return {
       customer_name: `${form.customer_first_name} ${form.customer_last_name}`.trim(),
@@ -390,6 +394,14 @@ export default function Checkout() {
     renderGroups.push({ type: '_quantity_offer' });
   }
 
+  // Inject upsell ticks before submit_button
+  const submitIdx = renderGroups.findIndex((g) => g.type === 'submit_button');
+  if (submitIdx >= 0) {
+    renderGroups.splice(submitIdx, 0, { type: '_upsell_ticks' });
+  } else {
+    renderGroups.push({ type: '_upsell_ticks' });
+  }
+
   const sharedProps = {
     cfg,
     form,
@@ -444,6 +456,20 @@ export default function Checkout() {
       <main className="mx-auto max-w-lg px-4 py-5">
         <form onSubmit={handleSubmit} className="space-y-5" style={{ fontFamily: cfg.form_font_family || 'Inter, sans-serif' }}>
           {renderGroups.map((item, idx) => {
+            // Upsell ticks (auto-injected before submit)
+            if (item.type === '_upsell_ticks') {
+              return (
+                <UpsellTickSelector
+                  key="upsell-ticks"
+                  slug={slug}
+                  productId={product?.id}
+                  currency={currency}
+                  country={country}
+                  formatPriceFn={formatPrice}
+                  onTicksChange={setSelectedTickItems}
+                />
+              );
+            }
             // Quantity offer block (auto-injected)
             if (item.type === '_quantity_offer') {
               return (
