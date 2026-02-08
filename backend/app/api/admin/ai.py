@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db, require_active_tenant
 from app.models.store_config import StoreConfig
 from app.models.tenant import Tenant
+from app.services.estrategas import get_gemini_key
 
 router = APIRouter(prefix="/api/admin/ai", tags=["admin-ai"])
 
@@ -40,22 +41,56 @@ class GenerateTextResponse(BaseModel):
     text: str
 
 
+async def _resolve_gemini_key(tenant: Tenant, db: AsyncSession) -> str:
+    """Try estrategas.com first, then fall back to local store config."""
+    # 1. Try Estrategas IA (shared Supabase)
+    key = await get_gemini_key(tenant.email)
+    if key:
+        return key
+
+    # 2. Fallback: local store_configs.gemini_api_key
+    result = await db.execute(
+        select(StoreConfig).where(StoreConfig.tenant_id == tenant.id)
+    )
+    config = result.scalar_one_or_none()
+    if config and config.gemini_api_key:
+        return config.gemini_api_key
+
+    raise HTTPException(
+        status_code=400,
+        detail="No se encontro API key de Gemini. Configurala en estrategasia.com > Configuracion.",
+    )
+
+
+@router.get("/status")
+async def ai_status(
+    db: AsyncSession = Depends(get_db),
+    tenant: Tenant = Depends(require_active_tenant),
+):
+    """Check if Gemini API key is available (from estrategas or local)."""
+    # 1. Try Estrategas
+    key = await get_gemini_key(tenant.email)
+    if key:
+        return {"available": True, "source": "estrategas"}
+
+    # 2. Fallback: local
+    result = await db.execute(
+        select(StoreConfig).where(StoreConfig.tenant_id == tenant.id)
+    )
+    config = result.scalar_one_or_none()
+    if config and config.gemini_api_key:
+        return {"available": True, "source": "local"}
+
+    return {"available": False, "source": None}
+
+
 @router.post("/generate-upsell-text", response_model=GenerateTextResponse)
 async def generate_upsell_text(
     data: GenerateTextRequest,
     db: AsyncSession = Depends(get_db),
     tenant: Tenant = Depends(require_active_tenant),
 ):
-    # Get API key from store config
-    result = await db.execute(
-        select(StoreConfig).where(StoreConfig.tenant_id == tenant.id)
-    )
-    config = result.scalar_one_or_none()
-    if not config or not config.gemini_api_key:
-        raise HTTPException(
-            status_code=400,
-            detail="Configura tu API key de Gemini en Configuracion para usar escritura magica.",
-        )
+    api_key = await _resolve_gemini_key(tenant, db)
 
     field_instructions = {
         "title": f"Escribe un titulo de upsell popup (max 10 palabras). El cliente esta comprando '{data.product_name}' y le ofreces '{data.upsell_product_name}'. El titulo debe hacer que el cliente sienta que NECESITA este producto adicional. Puedes usar {{product_name}} para insertar el nombre del producto upsell y {{first_name}} para el nombre del cliente.",
@@ -83,7 +118,7 @@ async def generate_upsell_text(
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
             resp = await client.post(
-                f"{GEMINI_URL}?key={config.gemini_api_key}",
+                f"{GEMINI_URL}?key={api_key}",
                 json=payload,
             )
             if resp.status_code != 200:

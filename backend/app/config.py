@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     R2_SECRET_ACCESS_KEY: str | None = None
     R2_BUCKET_NAME: str | None = None
     R2_PUBLIC_URL: str | None = None  # e.g. https://pub-xxx.r2.dev
+    # Estrategas IA (Supabase) — for shared API keys
+    SUPABASE_URL: str | None = None
+    SUPABASE_SERVICE_ROLE_KEY: str | None = None
+    ENCRYPTION_KEY: str | None = None  # 32-byte hex, same as estrategas
     CORS_ORIGINS: list[str] = [
         "http://localhost:5173",
         "http://localhost:5174",

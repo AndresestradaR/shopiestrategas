@@ -12,6 +12,9 @@ import {
   Sparkles,
   Eye,
   EyeOff,
+  CheckCircle2,
+  XCircle,
+  ExternalLink,
 } from "lucide-react";
 import client from "../api/client";
 
@@ -52,6 +55,15 @@ export default function Settings() {
       const res = await client.get("/admin/config");
       return res.data;
     },
+  });
+
+  const { data: aiStatus, isLoading: loadingAi } = useQuery({
+    queryKey: ["ai-status"],
+    queryFn: async () => {
+      const res = await client.get("/admin/ai/status");
+      return res.data;
+    },
+    staleTime: 60_000,
   });
 
   const [showApiKey, setShowApiKey] = useState(false);
@@ -95,6 +107,7 @@ export default function Settings() {
     onSuccess: () => {
       toast.success("Configuracion guardada");
       queryClient.invalidateQueries({ queryKey: ["admin-config"] });
+      queryClient.invalidateQueries({ queryKey: ["ai-status"] });
     },
     onError: () => toast.error("Error al guardar la configuracion"),
   });
@@ -108,6 +121,9 @@ export default function Settings() {
       </div>
     );
   }
+
+  const geminiConnected = aiStatus?.available;
+  const geminiSource = aiStatus?.source; // "estrategas" | "local" | null
 
   return (
     <div>
@@ -204,39 +220,83 @@ export default function Settings() {
                 <p className="mt-1 text-xs text-gray-400">Se asigna automaticamente segun el pais</p>
               </div>
             </div>
-            {/* Gemini API Key */}
+
+            {/* Gemini / AI section */}
             <div className="border-t border-gray-100 pt-4 mt-4">
               <div className="mb-3 flex items-center gap-2">
                 <Sparkles size={18} className="text-purple-500" />
                 <h3 className="text-sm font-semibold text-gray-800">Escritura Magica con IA</h3>
+                {!loadingAi && (
+                  geminiConnected ? (
+                    <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-700">
+                      <CheckCircle2 size={12} />
+                      Conectado
+                    </span>
+                  ) : (
+                    <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-600">
+                      <XCircle size={12} />
+                      No configurado
+                    </span>
+                  )
+                )}
               </div>
-              <p className="mb-3 text-xs text-gray-400">
-                Conecta tu API Key de Google Gemini para generar textos persuasivos automaticamente en tus upsells.
-              </p>
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">API Key de Gemini</label>
-                <div className="relative">
-                  <input
-                    type={showApiKey ? "text" : "password"}
-                    {...register("gemini_api_key")}
-                    placeholder="AIzaSy..."
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm text-gray-700 outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowApiKey(!showApiKey)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
+
+              {geminiSource === "estrategas" ? (
+                /* Key comes from estrategas.com — no manual input needed */
+                <div className="rounded-lg border border-green-200 bg-green-50 p-3">
+                  <p className="text-sm text-green-800">
+                    Tu API Key de Gemini esta conectada automaticamente desde{" "}
+                    <a
+                      href="https://estrategasia.com/dashboard/settings"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 font-medium text-green-700 underline"
+                    >
+                      Estrategas IA <ExternalLink size={12} />
+                    </a>
+                  </p>
+                  <p className="mt-1 text-xs text-green-600">
+                    Para cambiarla, ve a estrategasia.com &gt; Configuracion &gt; Google AI (Gemini)
+                  </p>
                 </div>
-                <p className="mt-1 text-xs text-gray-400">
-                  Obten tu API Key en{" "}
-                  <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-purple-500 underline">
-                    Google AI Studio
-                  </a>
-                </p>
-              </div>
+              ) : (
+                /* No estrategas key — show manual input as fallback */
+                <>
+                  <p className="mb-3 text-xs text-gray-400">
+                    {geminiSource === "local"
+                      ? "Usando API Key configurada manualmente. Si configuras tu key en estrategasia.com se usara automaticamente."
+                      : "Configura tu API Key de Gemini en estrategasia.com o ingresala manualmente aqui."}
+                  </p>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">API Key de Gemini (manual)</label>
+                    <div className="relative">
+                      <input
+                        type={showApiKey ? "text" : "password"}
+                        {...register("gemini_api_key")}
+                        placeholder="AIzaSy..."
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm text-gray-700 outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowApiKey(!showApiKey)}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                      </button>
+                    </div>
+                    <p className="mt-1 text-xs text-gray-400">
+                      Configura tu key en{" "}
+                      <a href="https://estrategasia.com/dashboard/settings" target="_blank" rel="noopener noreferrer" className="text-purple-500 underline">
+                        estrategasia.com
+                      </a>
+                      {" "}para que se conecte automaticamente, o ingresala{" "}
+                      <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-purple-500 underline">
+                        aqui manualmente
+                      </a>
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
 
             <div className="flex justify-end pt-2">
