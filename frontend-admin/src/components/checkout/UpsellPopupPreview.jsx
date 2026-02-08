@@ -109,6 +109,23 @@ export default function UpsellPopupPreview({ upsell, product }) {
 
   return (
     <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
+      {/* Keyframes for custom animations */}
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-3px); }
+          75% { transform: translateX(3px); }
+        }
+        @keyframes glow {
+          0%, 100% { box-shadow: 0 0 5px rgba(255,255,255,0.3); }
+          50% { box-shadow: 0 0 20px rgba(255,255,255,0.6), 0 0 40px rgba(255,255,255,0.2); }
+        }
+        @keyframes wiggle {
+          0%, 100% { transform: rotate(0deg); }
+          25% { transform: rotate(-2deg); }
+          75% { transform: rotate(2deg); }
+        }
+      `}</style>
       {/* Overlay header bar */}
       <div className="relative bg-gray-800/5 px-4 py-3">
         {!upsell.hide_close_icon && (
