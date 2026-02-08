@@ -394,10 +394,13 @@ export default function Checkout() {
     renderGroups.push({ type: '_quantity_offer' });
   }
 
-  // Inject upsell ticks before submit_button
-  const submitIdx = renderGroups.findIndex((g) => g.type === 'submit_button');
-  if (submitIdx >= 0) {
-    renderGroups.splice(submitIdx, 0, { type: '_upsell_ticks' });
+  // Inject upsell ticks after the LAST field_group (bottom of form, before submit)
+  let lastFieldGroupIdx = -1;
+  for (let i = renderGroups.length - 1; i >= 0; i--) {
+    if (renderGroups[i].type === 'field_group') { lastFieldGroupIdx = i; break; }
+  }
+  if (lastFieldGroupIdx >= 0) {
+    renderGroups.splice(lastFieldGroupIdx + 1, 0, { type: '_upsell_ticks' });
   } else {
     renderGroups.push({ type: '_upsell_ticks' });
   }
