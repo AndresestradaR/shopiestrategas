@@ -31,7 +31,8 @@ export default function ProductSelectorModal({
     queryKey: ["products-selector"],
     queryFn: async () => {
       const res = await client.get("/admin/products?limit=200");
-      return res.data.products || res.data || [];
+      const list = res.data?.products || res.data;
+      return Array.isArray(list) ? list : [];
     },
     enabled: open,
     staleTime: 30_000,

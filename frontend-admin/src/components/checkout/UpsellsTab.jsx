@@ -118,7 +118,10 @@ export default function UpsellsTab() {
 
   const { data: upsells = [], isLoading: upsellsLoading } = useQuery({
     queryKey: ["upsells"],
-    queryFn: async () => (await client.get("/admin/upsells")).data,
+    queryFn: async () => {
+      const res = await client.get("/admin/upsells");
+      return Array.isArray(res.data) ? res.data : [];
+    },
   });
 
   /* ── Mutations ───────────────────────────────────────────────────── */

@@ -90,7 +90,7 @@ async def _enrich_product_info(upsell: Upsell, db: AsyncSession) -> dict:
 
 # ── CRUD endpoints ──────────────────────────────────────────────────
 
-@router.get("/", response_model=list[UpsellResponse])
+@router.get("", response_model=list[UpsellResponse])
 async def list_upsells(
     db: AsyncSession = Depends(get_db),
     tenant: Tenant = Depends(require_active_tenant),
@@ -119,7 +119,7 @@ async def get_upsell(
     return await _enrich_product_info(upsell, db)
 
 
-@router.post("/", response_model=UpsellResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=UpsellResponse, status_code=status.HTTP_201_CREATED)
 async def create_upsell(
     data: UpsellCreate,
     db: AsyncSession = Depends(get_db),
