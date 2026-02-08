@@ -30,8 +30,8 @@ export default function ProductSelectorModal({
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["products-selector"],
     queryFn: async () => {
-      const res = await client.get("/admin/products?limit=200");
-      const list = res.data?.products || res.data;
+      const res = await client.get("/admin/products?per_page=200");
+      const list = res.data?.items || res.data?.products || res.data;
       return Array.isArray(list) ? list : [];
     },
     enabled: open,
