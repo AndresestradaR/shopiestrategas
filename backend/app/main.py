@@ -21,6 +21,7 @@ from app.api.admin.media import router as media_router
 from app.api.admin.page_designs import router as page_designs_router
 from app.api.admin.checkout_config import router as checkout_config_router
 from app.api.admin.upsells import router as upsells_router
+from app.api.admin.ai import router as ai_router
 from app.api.store.pages import router as store_pages_router
 from app.config import settings
 from app.database import Base, engine
@@ -153,6 +154,21 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f"[migrate] quantity_offer_tiers inner_label: {e}")
 
+    try:
+        async with engine.begin() as conn:
+            # add gemini_api_key to store_configs
+            result = await conn.execute(text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_schema = 'minishop' AND table_name = 'store_configs' AND column_name = 'gemini_api_key'"
+            ))
+            if not result.fetchone():
+                await conn.execute(text(
+                    "ALTER TABLE minishop.store_configs "
+                    "ADD COLUMN gemini_api_key VARCHAR(255)"
+                ))
+    except Exception as e:
+        print(f"[migrate] gemini_api_key: {e}")
+
     yield
 
 
@@ -183,6 +199,7 @@ app.include_router(page_designs_router)
 app.include_router(store_pages_router)
 app.include_router(checkout_config_router)
 app.include_router(upsells_router)
+app.include_router(ai_router)
 
 # Mount uploads directory for local dev (when R2 is not configured, images are served from disk)
 from app.services.storage import is_r2_configured  # noqa: E402

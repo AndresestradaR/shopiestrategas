@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
@@ -9,6 +9,9 @@ import {
   Settings as SettingsIcon,
   Store,
   Globe,
+  Sparkles,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import client from "../api/client";
 
@@ -51,11 +54,14 @@ export default function Settings() {
     },
   });
 
+  const [showApiKey, setShowApiKey] = useState(false);
+
   const { register, handleSubmit, reset, watch, setValue } = useForm({
     defaultValues: {
       whatsapp_number: "",
       country: "CO",
       currency: "COP ($)",
+      gemini_api_key: "",
     },
   });
 
@@ -67,6 +73,7 @@ export default function Settings() {
         whatsapp_number: config.whatsapp_number || "",
         country: config.country || "CO",
         currency: getCurrencyForCountry(config.country || "CO"),
+        gemini_api_key: config.gemini_api_key || "",
       });
     }
   }, [config, reset]);
@@ -82,6 +89,7 @@ export default function Settings() {
         whatsapp_number: data.whatsapp_number,
         country: data.country,
         currency: country?.currency || "COP",
+        gemini_api_key: data.gemini_api_key || null,
       });
     },
     onSuccess: () => {
@@ -196,6 +204,41 @@ export default function Settings() {
                 <p className="mt-1 text-xs text-gray-400">Se asigna automaticamente segun el pais</p>
               </div>
             </div>
+            {/* Gemini API Key */}
+            <div className="border-t border-gray-100 pt-4 mt-4">
+              <div className="mb-3 flex items-center gap-2">
+                <Sparkles size={18} className="text-purple-500" />
+                <h3 className="text-sm font-semibold text-gray-800">Escritura Magica con IA</h3>
+              </div>
+              <p className="mb-3 text-xs text-gray-400">
+                Conecta tu API Key de Google Gemini para generar textos persuasivos automaticamente en tus upsells.
+              </p>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">API Key de Gemini</label>
+                <div className="relative">
+                  <input
+                    type={showApiKey ? "text" : "password"}
+                    {...register("gemini_api_key")}
+                    placeholder="AIzaSy..."
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-sm text-gray-700 outline-none focus:border-[#4DBEA4] focus:ring-2 focus:ring-[#4DBEA4]/20"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowApiKey(!showApiKey)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                <p className="mt-1 text-xs text-gray-400">
+                  Obten tu API Key en{" "}
+                  <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-purple-500 underline">
+                    Google AI Studio
+                  </a>
+                </p>
+              </div>
+            </div>
+
             <div className="flex justify-end pt-2">
               <button
                 type="submit"

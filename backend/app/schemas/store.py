@@ -31,6 +31,7 @@ class StoreConfigResponse(BaseModel):
     instagram_url: str | None = None
     facebook_url: str | None = None
     tiktok_url: str | None = None
+    gemini_api_key: str | None = None
 
     model_config = {"from_attributes": True}
 
@@ -60,6 +61,7 @@ class StoreConfigUpdate(BaseModel):
     instagram_url: str | None = None
     facebook_url: str | None = None
     tiktok_url: str | None = None
+    gemini_api_key: str | None = None
 
 
 class StorePageResponse(BaseModel):

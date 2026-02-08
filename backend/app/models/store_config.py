@@ -36,4 +36,6 @@ class StoreConfig(Base):
     facebook_url: Mapped[str | None] = mapped_column(String(500))
     tiktok_url: Mapped[str | None] = mapped_column(String(500))
 
+    gemini_api_key: Mapped[str | None] = mapped_column(String(255))
+
     tenant = relationship("Tenant", back_populates="store_config")

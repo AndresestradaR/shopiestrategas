@@ -1,4 +1,4 @@
-import { X, ShoppingCart, Clock, Minus, Plus } from "lucide-react";
+import { X, ShoppingCart, Clock, Minus, Plus, Gift, Star, Flame, Tag, Heart, Check, Zap } from "lucide-react";
 import { useState } from "react";
 
 const getImageUrl = (imgUrl) => {
@@ -14,6 +14,19 @@ const ANIMATIONS = {
   pulse: "animate-pulse",
   shake: "animate-[shake_0.5s_ease-in-out_infinite]",
   bounce: "animate-bounce",
+  glow: "animate-[glow_1.5s_ease-in-out_infinite]",
+  wiggle: "animate-[wiggle_1s_ease-in-out_infinite]",
+};
+
+const ICON_MAP = {
+  cart: ShoppingCart,
+  gift: Gift,
+  star: Star,
+  fire: Flame,
+  tag: Tag,
+  heart: Heart,
+  check: Check,
+  zap: Zap,
 };
 
 export default function UpsellPopupPreview({ upsell, product }) {
@@ -210,9 +223,10 @@ export default function UpsellPopupPreview({ upsell, product }) {
           className={`w-full py-3 font-semibold transition-all ${addBtnAnimation}`}
           style={addBtnStyle}
         >
-          {upsell.add_button_icon === "cart" && (
-            <ShoppingCart size={16} className="mr-2 inline" />
-          )}
+          {upsell.add_button_icon && ICON_MAP[upsell.add_button_icon] && (() => {
+            const Icon = ICON_MAP[upsell.add_button_icon];
+            return <Icon size={16} className="mr-2 inline" />;
+          })()}
           {upsell.add_button_text}
         </button>
 

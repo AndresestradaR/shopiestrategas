@@ -17,6 +17,7 @@ import {
   Info,
   Package,
   X,
+  Sparkles,
 } from "lucide-react";
 import client from "../../api/client";
 import ColorPicker from "./ColorPicker";
@@ -174,6 +175,36 @@ export default function UpsellsTab() {
       queryClient.invalidateQueries({ queryKey: ["upsells"] });
     },
   });
+
+  /* ── AI text generation ──────────────────────────────────────────── */
+  const [aiLoading, setAiLoading] = useState(null); // field being generated
+
+  const generateAiText = async (field) => {
+    if (!upsellProduct) {
+      toast.error("Selecciona un producto upsell primero");
+      return;
+    }
+    setAiLoading(field);
+    try {
+      const res = await client.post("/admin/ai/generate-upsell-text", {
+        field,
+        product_name: "producto del cliente",
+        upsell_product_name: upsellProduct.name,
+        upsell_product_description: upsellProduct.description || "",
+        current_text: field === "title" ? localUpsell.title : field === "subtitle" ? localUpsell.subtitle : localUpsell.product_description_override,
+      });
+      const text = res.data.text;
+      if (field === "title") handleChange({ title: text });
+      else if (field === "subtitle") handleChange({ subtitle: text });
+      else if (field === "description") handleChange({ product_description_override: text });
+      toast.success("Texto generado");
+    } catch (err) {
+      const msg = err.response?.data?.detail || "Error al generar texto";
+      toast.error(msg);
+    } finally {
+      setAiLoading(null);
+    }
+  };
 
   /* ── Handlers ────────────────────────────────────────────────────── */
   const handleChange = (updates) => {
@@ -575,21 +606,33 @@ export default function UpsellsTab() {
                   </button>
                   {triggerProducts.length > 0 && (
                     <div className="space-y-1">
-                      {triggerProducts.map((p) => (
-                        <div key={p.id} className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2">
-                          <span className="flex-1 truncate text-sm text-gray-700">{p.name}</span>
-                          <button
-                            onClick={() => {
-                              const filtered = triggerProducts.filter((tp) => tp.id !== p.id);
-                              setTriggerProducts(filtered);
-                              handleChange({ trigger_product_ids: filtered.map((tp) => String(tp.id)) });
-                            }}
-                            className="text-gray-400 hover:text-red-500"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      ))}
+                      {triggerProducts.map((p) => {
+                        const imgUrl = p.images?.[0]?.image_url || p.images?.[0]?.url || p.images?.[0] || p.image_url || null;
+                        return (
+                          <div key={p.id} className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2">
+                            <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-md bg-gray-200">
+                              {imgUrl ? (
+                                <img src={getImageUrl(imgUrl)} alt="" className="h-full w-full object-cover" />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center text-gray-400">
+                                  <Package size={14} />
+                                </div>
+                              )}
+                            </div>
+                            <span className="flex-1 truncate text-sm text-gray-700">{p.name}</span>
+                            <button
+                              onClick={() => {
+                                const filtered = triggerProducts.filter((tp) => tp.id !== p.id);
+                                setTriggerProducts(filtered);
+                                handleChange({ trigger_product_ids: filtered.map((tp) => String(tp.id)) });
+                              }}
+                              className="text-gray-400 hover:text-red-500"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -681,7 +724,19 @@ export default function UpsellsTab() {
           {/* Section: Design */}
           <Section title="Personaliza el diseno">
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">Titulo</label>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="text-xs font-medium text-gray-600">Titulo</label>
+                <button
+                  type="button"
+                  onClick={() => generateAiText("title")}
+                  disabled={aiLoading === "title"}
+                  className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-1 text-[11px] font-medium text-purple-600 hover:bg-purple-100 disabled:opacity-50"
+                  title="Generar con IA"
+                >
+                  {aiLoading === "title" ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                  Escritura magica
+                </button>
+              </div>
               <input
                 type="text"
                 value={localUpsell.title}
@@ -694,7 +749,19 @@ export default function UpsellsTab() {
             </div>
             <ColorPicker label="Color del titulo" value={localUpsell.title_color} onChange={(v) => handleChange({ title_color: v })} />
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">Subtitulo</label>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="text-xs font-medium text-gray-600">Subtitulo</label>
+                <button
+                  type="button"
+                  onClick={() => generateAiText("subtitle")}
+                  disabled={aiLoading === "subtitle"}
+                  className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-1 text-[11px] font-medium text-purple-600 hover:bg-purple-100 disabled:opacity-50"
+                  title="Generar con IA"
+                >
+                  {aiLoading === "subtitle" ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                  Escritura magica
+                </button>
+              </div>
               <input
                 type="text"
                 value={localUpsell.subtitle}
@@ -713,7 +780,19 @@ export default function UpsellsTab() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-600">Descripcion del producto (override)</label>
+              <div className="mb-1 flex items-center justify-between">
+                <label className="text-xs font-medium text-gray-600">Descripcion del producto (override)</label>
+                <button
+                  type="button"
+                  onClick={() => generateAiText("description")}
+                  disabled={aiLoading === "description"}
+                  className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-1 text-[11px] font-medium text-purple-600 hover:bg-purple-100 disabled:opacity-50"
+                  title="Generar con IA"
+                >
+                  {aiLoading === "description" ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                  Escritura magica
+                </button>
+              </div>
               <textarea
                 rows={3}
                 placeholder="Si dejas este campo en blanco, la aplicacion utilizara la descripcion del producto"
@@ -795,8 +874,10 @@ export default function UpsellsTab() {
               >
                 <option value="none">Ninguna</option>
                 <option value="pulse">Pulso</option>
-                <option value="shake">Agitar</option>
+                <option value="shake">Sacudida</option>
                 <option value="bounce">Rebotar</option>
+                <option value="glow">Brillar</option>
+                <option value="wiggle">Tambalear</option>
               </select>
             </div>
             <div>
@@ -808,6 +889,13 @@ export default function UpsellsTab() {
               >
                 <option value="">Sin icono</option>
                 <option value="cart">Carrito</option>
+                <option value="gift">Regalo</option>
+                <option value="star">Estrella</option>
+                <option value="fire">Fuego</option>
+                <option value="tag">Etiqueta</option>
+                <option value="heart">Corazon</option>
+                <option value="check">Check</option>
+                <option value="zap">Rayo</option>
               </select>
             </div>
             <ColorPicker label="Color del fondo" value={localUpsell.add_button_bg_color} onChange={(v) => handleChange({ add_button_bg_color: v })} />
