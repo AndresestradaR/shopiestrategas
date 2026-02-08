@@ -24,6 +24,7 @@ import ColorPicker from "./ColorPicker";
 import SliderControl from "./SliderControl";
 import ProductSelectorModal from "./ProductSelectorModal";
 import UpsellPopupPreview from "./UpsellPopupPreview";
+import UpsellTickPreview from "./UpsellTickPreview";
 
 const getImageUrl = (imgUrl) => {
   if (!imgUrl) return null;
@@ -76,6 +77,29 @@ const DEFAULT_UPSELL = {
   decline_button_shadow: 0,
 };
 
+const DEFAULT_TICK = {
+  name: "Nuevo upsell",
+  is_active: true,
+  priority: 0,
+  trigger_type: "all",
+  trigger_product_ids: [],
+  link_product: false,
+  linked_product_id: null,
+  upsell_title: "Nombre Oferta",
+  upsell_price: 0,
+  checkbox_text: "Agrega {title} por solo {price}",
+  description_text: "",
+  preselected: false,
+  image_url: null,
+  text_color: "rgba(0,0,0,1)",
+  description_color: "rgba(89,89,89,1)",
+  bg_color: "rgba(217,235,246,1)",
+  border_style: "solid",
+  border_width: 1,
+  border_color: "rgba(0,116,191,1)",
+  border_radius: 8,
+};
+
 /* ─── Section wrapper ──────────────────────────────────────────────── */
 function Section({ title, children, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -102,14 +126,20 @@ function Section({ title, children, defaultOpen = true }) {
 export default function UpsellsTab() {
   const queryClient = useQueryClient();
 
-  // View: "cards" | "config" | "editor"
+  // View: "cards" | "config" | "editor" | "tick-list" | "tick-editor"
   const [view, setView] = useState("cards");
-  const [editingUpsell, setEditingUpsell] = useState(null); // null = creating new
+  const [editingUpsell, setEditingUpsell] = useState(null);
   const [localUpsell, setLocalUpsell] = useState({ ...DEFAULT_UPSELL });
-  const [upsellProduct, setUpsellProduct] = useState(null); // product info for preview
-  const [triggerProducts, setTriggerProducts] = useState([]); // products for trigger display
+  const [upsellProduct, setUpsellProduct] = useState(null);
+  const [triggerProducts, setTriggerProducts] = useState([]);
   const [productModalOpen, setProductModalOpen] = useState(false);
-  const [productModalMode, setProductModalMode] = useState("upsell"); // "upsell" | "trigger"
+  const [productModalMode, setProductModalMode] = useState("upsell"); // "upsell" | "trigger" | "tick-linked" | "tick-trigger"
+
+  // 1-Tick states
+  const [editingTick, setEditingTick] = useState(null);
+  const [localTick, setLocalTick] = useState({ ...DEFAULT_TICK });
+  const [tickLinkedProduct, setTickLinkedProduct] = useState(null);
+  const [tickTriggerProducts, setTickTriggerProducts] = useState([]);
 
   /* ── Queries ─────────────────────────────────────────────────────── */
   const { data: upsellConfig, isLoading: configLoading } = useQuery({
@@ -173,6 +203,56 @@ export default function UpsellsTab() {
     onSuccess: () => {
       toast.success("Upsell eliminado");
       queryClient.invalidateQueries({ queryKey: ["upsells"] });
+    },
+  });
+
+  /* ── 1-Tick queries & mutations ──────────────────────────────────── */
+  const { data: upsellTicks = [], isLoading: ticksLoading } = useQuery({
+    queryKey: ["upsell-ticks"],
+    queryFn: async () => {
+      const res = await client.get("/admin/upsell-ticks");
+      return Array.isArray(res.data) ? res.data : [];
+    },
+  });
+
+  const createTickMut = useMutation({
+    mutationFn: (data) => client.post("/admin/upsell-ticks", data),
+    onSuccess: () => {
+      toast.success("Upsell 1-Tick creado");
+      queryClient.invalidateQueries({ queryKey: ["upsell-ticks"] });
+      setView("tick-list");
+    },
+    onError: () => toast.error("Error al crear upsell"),
+  });
+
+  const updateTickMut = useMutation({
+    mutationFn: ({ id, data }) => client.put(`/admin/upsell-ticks/${id}`, data),
+    onSuccess: () => {
+      toast.success("Upsell 1-Tick guardado");
+      queryClient.invalidateQueries({ queryKey: ["upsell-ticks"] });
+      setView("tick-list");
+    },
+    onError: () => toast.error("Error al guardar"),
+  });
+
+  const toggleTickMut = useMutation({
+    mutationFn: (id) => client.patch(`/admin/upsell-ticks/${id}/toggle`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["upsell-ticks"] }),
+  });
+
+  const duplicateTickMut = useMutation({
+    mutationFn: (id) => client.post(`/admin/upsell-ticks/${id}/duplicate`),
+    onSuccess: () => {
+      toast.success("Upsell duplicado");
+      queryClient.invalidateQueries({ queryKey: ["upsell-ticks"] });
+    },
+  });
+
+  const deleteTickMut = useMutation({
+    mutationFn: (id) => client.delete(`/admin/upsell-ticks/${id}`),
+    onSuccess: () => {
+      toast.success("Upsell eliminado");
+      queryClient.invalidateQueries({ queryKey: ["upsell-ticks"] });
     },
   });
 
@@ -255,6 +335,74 @@ export default function UpsellsTab() {
     } else if (productModalMode === "trigger") {
       setTriggerProducts(products);
       handleChange({ trigger_product_ids: products.map((p) => String(p.id)) });
+    } else if (productModalMode === "tick-linked" && products.length > 0) {
+      const p = products[0];
+      const imgUrl = p.images?.[0]?.image_url || p.images?.[0]?.url || p.images?.[0] || null;
+      setTickLinkedProduct({
+        id: p.id,
+        name: p.name,
+        price: p.price,
+        image_url: imgUrl,
+      });
+      handleTickChange({
+        linked_product_id: String(p.id),
+        upsell_title: p.name,
+        upsell_price: p.price,
+      });
+    } else if (productModalMode === "tick-trigger") {
+      setTickTriggerProducts(products);
+      handleTickChange({ trigger_product_ids: products.map((p) => String(p.id)) });
+    }
+  };
+
+  /* ── 1-Tick handlers ────────────────────────────────────────────── */
+  const handleTickChange = (updates) => {
+    setLocalTick((prev) => ({ ...prev, ...updates }));
+  };
+
+  const openTickEditor = (tick = null) => {
+    if (tick) {
+      setEditingTick(tick);
+      setLocalTick({ ...DEFAULT_TICK, ...tick });
+      setTickLinkedProduct(tick.linked_product || null);
+      setTickTriggerProducts([]);
+    } else {
+      setEditingTick(null);
+      setLocalTick({ ...DEFAULT_TICK });
+      setTickLinkedProduct(null);
+      setTickTriggerProducts([]);
+    }
+    setView("tick-editor");
+  };
+
+  const handleSaveTick = () => {
+    const data = { ...localTick };
+    data.linked_product_id = data.linked_product_id ? String(data.linked_product_id) : null;
+    data.trigger_product_ids = (data.trigger_product_ids || []).map(String);
+    if (editingTick) {
+      updateTickMut.mutate({ id: editingTick.id, data });
+    } else {
+      createTickMut.mutate(data);
+    }
+  };
+
+  const generateTickAiText = async (field) => {
+    setAiLoading(field);
+    try {
+      const aiField = field === "upsell_title" ? "tick_checkbox" : field === "checkbox_text" ? "tick_checkbox" : "tick_description";
+      const res = await client.post("/admin/ai/generate-upsell-text", {
+        field: aiField,
+        product_name: "producto del cliente",
+        upsell_product_name: localTick.upsell_title || "complemento",
+        upsell_product_description: localTick.description_text || "",
+        current_text: localTick[field] || "",
+      });
+      handleTickChange({ [field]: res.data.text });
+      toast.success("Texto generado");
+    } catch (err) {
+      toast.error(err.response?.data?.detail || "Error al generar texto");
+    } finally {
+      setAiLoading(null);
     }
   };
 
@@ -286,8 +434,8 @@ export default function UpsellsTab() {
           </div>
         </div>
 
-        {/* Card 2: Upsells 1-Tick (disabled) */}
-        <div className="flex items-start gap-5 rounded-2xl border border-gray-200 bg-white p-6 opacity-60">
+        {/* Card 2: Upsells 1-Tick */}
+        <div className="flex items-start gap-5 rounded-2xl border border-gray-200 bg-white p-6">
           <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-500">
             <CheckSquare size={24} />
           </div>
@@ -299,13 +447,11 @@ export default function UpsellsTab() {
               Envoltorio de regalo, Garantia ampliada.
             </p>
             <button
-              disabled
-              className="mt-4 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-medium text-gray-400 cursor-not-allowed"
+              onClick={() => setView("tick-list")}
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-600 transition-colors"
             >
               Configurar Upsells 1-Tick
-              <span className="rounded bg-gray-200 px-1.5 py-0.5 text-[10px] font-bold text-gray-500">
-                PRONTO
-              </span>
+              <ChevronRight size={16} />
             </button>
           </div>
         </div>
@@ -528,6 +674,422 @@ export default function UpsellsTab() {
             </div>
           </>
         )}
+      </div>
+    );
+  }
+
+  /* ─── VIEW: Tick list ────────────────────────────────────────── */
+  if (view === "tick-list") {
+    return (
+      <div className="space-y-5">
+        <div className="flex items-center gap-3">
+          <button onClick={() => setView("cards")} className="rounded-lg p-1.5 hover:bg-gray-100">
+            <ArrowLeft size={20} />
+          </button>
+          <h2 className="text-lg font-bold text-gray-900">Upsells 1-Tick</h2>
+        </div>
+
+        {ticksLoading ? (
+          <div className="flex justify-center py-10">
+            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+          </div>
+        ) : (
+          <div className="rounded-2xl border border-gray-200 bg-white p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-gray-800">Tus upsells 1-tick</h3>
+              <button
+                onClick={() => openTickEditor(null)}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#4DBEA4] px-3 py-2 text-sm font-semibold text-white hover:bg-[#3da88e]"
+              >
+                <Plus size={16} />
+                Anadir upsell
+              </button>
+            </div>
+
+            {upsellTicks.length === 0 ? (
+              <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-200 py-12">
+                <CheckSquare size={40} className="mb-3 text-gray-300" />
+                <p className="mb-1 text-sm font-medium text-gray-500">No tienes upsells 1-tick creados</p>
+                <p className="mb-4 text-xs text-gray-400">Crea tu primer 1-tick para aumentar tu AOV</p>
+                <button
+                  onClick={() => openTickEditor(null)}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-[#4DBEA4] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#3da88e]"
+                >
+                  <Plus size={16} />
+                  Anadir upsell 1-tick
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {upsellTicks.map((t) => {
+                  const productImg = t.linked_product?.image_url;
+                  return (
+                    <div key={t.id} className="flex items-center gap-4 rounded-xl border border-gray-200 p-4">
+                      <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                        {productImg ? (
+                          <img src={getImageUrl(productImg)} alt="" className="h-full w-full object-cover" />
+                        ) : t.image_url ? (
+                          <img src={getImageUrl(t.image_url)} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-gray-300">
+                            <CheckSquare size={20} />
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-gray-800">{t.name}</p>
+                        <p className="text-xs text-gray-400">
+                          {t.trigger_type === "all" ? "Todos los productos" : "Productos especificos"}
+                          {" — "}
+                          {t.upsell_title} · ${Number(t.upsell_price || 0).toLocaleString("es-CO")}
+                        </p>
+                      </div>
+                      <button onClick={() => toggleTickMut.mutate(t.id)} className="flex-shrink-0">
+                        {t.is_active ? (
+                          <ToggleRight size={28} className="text-[#4DBEA4]" />
+                        ) : (
+                          <ToggleLeft size={28} className="text-gray-300" />
+                        )}
+                      </button>
+                      <div className="flex flex-shrink-0 gap-1">
+                        <button onClick={() => openTickEditor(t)} className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600" title="Editar">
+                          <Pencil size={15} />
+                        </button>
+                        <button onClick={() => duplicateTickMut.mutate(t.id)} className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600" title="Duplicar">
+                          <Copy size={15} />
+                        </button>
+                        <button
+                          onClick={() => { if (window.confirm("Eliminar este upsell 1-tick?")) deleteTickMut.mutate(t.id); }}
+                          className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-500"
+                          title="Eliminar"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  /* ─── VIEW: Tick editor ────────────────────────────────────────── */
+  if (view === "tick-editor") {
+    const tickSaving = createTickMut.isPending || updateTickMut.isPending;
+
+    return (
+      <div className="space-y-5">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setView("tick-list")} className="rounded-lg p-1.5 hover:bg-gray-100">
+              <ArrowLeft size={20} />
+            </button>
+            <h2 className="text-lg font-bold text-gray-900">
+              {editingTick ? "Editar upsell 1-tick" : "Crear upsell 1-tick"}
+            </h2>
+          </div>
+          <button
+            onClick={handleSaveTick}
+            disabled={tickSaving}
+            className="inline-flex items-center gap-2 rounded-lg bg-[#4DBEA4] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#3da88e] disabled:opacity-50"
+          >
+            {tickSaving && <Loader2 size={14} className="animate-spin" />}
+            Guardar
+          </button>
+        </div>
+
+        <div className="flex gap-6">
+          {/* Left: form */}
+          <div className="flex-1 min-w-0 space-y-4">
+            {/* Section: Config */}
+            <Section title="Configura tu upsell">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-600">Nombre del upsell</label>
+                <input
+                  type="text"
+                  value={localTick.name}
+                  onChange={(e) => handleTickChange({ name: e.target.value })}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#4DBEA4] focus:outline-none focus:ring-2 focus:ring-[#4DBEA4]/20"
+                />
+              </div>
+
+              {/* Trigger */}
+              <div>
+                <label className="mb-2 block text-xs font-medium text-gray-600">
+                  Mostrar cuando el cliente compra:
+                </label>
+                <div className="flex gap-2 mb-3">
+                  {["all", "specific"].map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => handleTickChange({ trigger_type: t })}
+                      className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
+                        localTick.trigger_type === t
+                          ? "bg-[#4DBEA4] text-white"
+                          : "border border-gray-200 text-gray-600 hover:bg-gray-50"
+                      }`}
+                    >
+                      {t === "all" ? "Todos los productos" : "Productos especificos"}
+                    </button>
+                  ))}
+                </div>
+                {localTick.trigger_type === "specific" && (
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => { setProductModalMode("tick-trigger"); setProductModalOpen(true); }}
+                      className="rounded-lg border border-dashed border-gray-300 px-4 py-2 text-sm text-gray-500 hover:border-[#4DBEA4] hover:text-[#4DBEA4]"
+                    >
+                      + Selecciona los productos
+                    </button>
+                    {tickTriggerProducts.length > 0 && (
+                      <div className="space-y-1">
+                        {tickTriggerProducts.map((p) => {
+                          const imgUrl = p.images?.[0]?.image_url || p.images?.[0]?.url || p.images?.[0] || p.image_url || null;
+                          return (
+                            <div key={p.id} className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2">
+                              <div className="h-8 w-8 flex-shrink-0 overflow-hidden rounded-md bg-gray-200">
+                                {imgUrl ? (
+                                  <img src={getImageUrl(imgUrl)} alt="" className="h-full w-full object-cover" />
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center text-gray-400"><Package size={14} /></div>
+                                )}
+                              </div>
+                              <span className="flex-1 truncate text-sm text-gray-700">{p.name}</span>
+                              <button
+                                onClick={() => {
+                                  const filtered = tickTriggerProducts.filter((tp) => tp.id !== p.id);
+                                  setTickTriggerProducts(filtered);
+                                  handleTickChange({ trigger_product_ids: filtered.map((tp) => String(tp.id)) });
+                                }}
+                                className="text-gray-400 hover:text-red-500"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Link product toggle */}
+              <div className="space-y-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={localTick.link_product}
+                    onChange={(e) => {
+                      handleTickChange({ link_product: e.target.checked });
+                      if (!e.target.checked) {
+                        setTickLinkedProduct(null);
+                        handleTickChange({ linked_product_id: null });
+                      }
+                    }}
+                    className="h-4 w-4 rounded border-gray-300 text-[#4DBEA4] focus:ring-[#4DBEA4]"
+                  />
+                  <span className="text-sm text-gray-700">Vincular a un producto del catalogo</span>
+                </label>
+                <p className="text-[11px] text-gray-400 -mt-1">
+                  Si vinculas un producto, el titulo y precio se tomaran automaticamente del catalogo.
+                </p>
+
+                {localTick.link_product && (
+                  <>
+                    {tickLinkedProduct ? (
+                      <div className="flex items-center gap-3 rounded-lg border border-gray-200 p-3">
+                        <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                          {tickLinkedProduct.image_url ? (
+                            <img src={getImageUrl(tickLinkedProduct.image_url)} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-gray-300"><Package size={16} /></div>
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-medium text-gray-800">{tickLinkedProduct.name}</p>
+                          <p className="text-xs text-gray-400">${Number(tickLinkedProduct.price).toLocaleString("es-CO")}</p>
+                        </div>
+                        <button
+                          onClick={() => { setProductModalMode("tick-linked"); setProductModalOpen(true); }}
+                          className="rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                        >
+                          Cambiar
+                        </button>
+                        <button
+                          onClick={() => { setTickLinkedProduct(null); handleTickChange({ linked_product_id: null }); }}
+                          className="text-gray-400 hover:text-red-500"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => { setProductModalMode("tick-linked"); setProductModalOpen(true); }}
+                        className="w-full rounded-lg border-2 border-dashed border-gray-300 py-6 text-sm text-gray-400 hover:border-[#4DBEA4] hover:text-[#4DBEA4]"
+                      >
+                        + Seleccionar producto
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Manual title & price (when not linked) */}
+              {!localTick.link_product && (
+                <>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600">Titulo de la oferta</label>
+                    <input
+                      type="text"
+                      value={localTick.upsell_title}
+                      onChange={(e) => handleTickChange({ upsell_title: e.target.value })}
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#4DBEA4] focus:outline-none focus:ring-2 focus:ring-[#4DBEA4]/20"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-gray-600">Precio</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={localTick.upsell_price}
+                      onChange={(e) => handleTickChange({ upsell_price: Number(e.target.value) })}
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#4DBEA4] focus:outline-none focus:ring-2 focus:ring-[#4DBEA4]/20"
+                    />
+                  </div>
+                </>
+              )}
+            </Section>
+
+            {/* Section: Checkbox text */}
+            <Section title="Texto del checkbox">
+              <div>
+                <div className="mb-1 flex items-center justify-between">
+                  <label className="text-xs font-medium text-gray-600">Texto del checkbox</label>
+                  <button
+                    type="button"
+                    onClick={() => generateTickAiText("checkbox_text")}
+                    disabled={aiLoading === "checkbox_text"}
+                    className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-1 text-[11px] font-medium text-purple-600 hover:bg-purple-100 disabled:opacity-50"
+                  >
+                    {aiLoading === "checkbox_text" ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                    Escritura magica
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={localTick.checkbox_text}
+                  onChange={(e) => handleTickChange({ checkbox_text: e.target.value })}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#4DBEA4] focus:outline-none"
+                />
+                <p className="mt-1 text-[11px] text-gray-400">
+                  Variables: {"{title}"} para titulo, {"{price}"} para precio
+                </p>
+              </div>
+
+              <div>
+                <div className="mb-1 flex items-center justify-between">
+                  <label className="text-xs font-medium text-gray-600">Descripcion (opcional)</label>
+                  <button
+                    type="button"
+                    onClick={() => generateTickAiText("description_text")}
+                    disabled={aiLoading === "description_text"}
+                    className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-1 text-[11px] font-medium text-purple-600 hover:bg-purple-100 disabled:opacity-50"
+                  >
+                    {aiLoading === "description_text" ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
+                    Escritura magica
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  value={localTick.description_text || ""}
+                  onChange={(e) => handleTickChange({ description_text: e.target.value })}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#4DBEA4] focus:outline-none"
+                />
+              </div>
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={localTick.preselected}
+                  onChange={(e) => handleTickChange({ preselected: e.target.checked })}
+                  className="h-4 w-4 rounded border-gray-300 text-[#4DBEA4] focus:ring-[#4DBEA4]"
+                />
+                <span className="text-sm text-gray-700">Pre-seleccionar checkbox</span>
+              </label>
+            </Section>
+
+            {/* Section: Image */}
+            <Section title="Imagen (opcional)" defaultOpen={false}>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-600">URL de imagen</label>
+                <input
+                  type="text"
+                  placeholder="https://... o /uploads/..."
+                  value={localTick.image_url || ""}
+                  onChange={(e) => handleTickChange({ image_url: e.target.value || null })}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-[#4DBEA4] focus:outline-none"
+                />
+                <p className="mt-1 text-[11px] text-gray-400">Imagen pequena que aparece junto al checkbox (40x40)</p>
+              </div>
+            </Section>
+
+            {/* Section: Appearance */}
+            <Section title="Apariencia" defaultOpen={false}>
+              <ColorPicker label="Color del texto" value={localTick.text_color} onChange={(v) => handleTickChange({ text_color: v })} />
+              <ColorPicker label="Color de descripcion" value={localTick.description_color} onChange={(v) => handleTickChange({ description_color: v })} />
+              <ColorPicker label="Color de fondo" value={localTick.bg_color} onChange={(v) => handleTickChange({ bg_color: v })} />
+              <div>
+                <label className="mb-1 block text-xs font-medium text-gray-600">Estilo del borde</label>
+                <select
+                  value={localTick.border_style}
+                  onChange={(e) => handleTickChange({ border_style: e.target.value })}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                >
+                  <option value="solid">Solido</option>
+                  <option value="dashed">Discontinuo</option>
+                  <option value="dotted">Punteado</option>
+                  <option value="none">Sin borde</option>
+                </select>
+              </div>
+              <SliderControl label="Ancho del borde" value={localTick.border_width} onChange={(v) => handleTickChange({ border_width: v })} min={0} max={5} unit="px" />
+              <ColorPicker label="Color del borde" value={localTick.border_color} onChange={(v) => handleTickChange({ border_color: v })} />
+              <SliderControl label="Radio del borde" value={localTick.border_radius} onChange={(v) => handleTickChange({ border_radius: v })} min={0} max={20} unit="px" />
+            </Section>
+          </div>
+
+          {/* Right: preview */}
+          <div className="hidden xl:block w-[380px] flex-shrink-0 sticky top-6 self-start">
+            <div className="rounded-2xl border border-gray-200 bg-gray-100 p-4">
+              <UpsellTickPreview tick={localTick} />
+            </div>
+          </div>
+        </div>
+
+        {/* Product selector modal */}
+        <ProductSelectorModal
+          open={productModalOpen}
+          onClose={() => setProductModalOpen(false)}
+          onConfirm={handleProductSelect}
+          multi={productModalMode === "tick-trigger"}
+          selectedIds={
+            productModalMode === "tick-trigger"
+              ? (localTick.trigger_product_ids || [])
+              : localTick.linked_product_id
+              ? [localTick.linked_product_id]
+              : []
+          }
+          title={
+            productModalMode === "tick-trigger"
+              ? "Selecciona productos trigger"
+              : "Selecciona el producto vinculado"
+          }
+        />
       </div>
     );
   }
